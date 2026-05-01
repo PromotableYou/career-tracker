@@ -14,10 +14,8 @@ exports.handler = async (event) => {
     const body = JSON.parse(event.body || '{}')
 
     const email = (body.email || body.contact_email || '').toLowerCase().trim()
-    const firstName = body.first_name || body.firstName || ''
-    const lastName = body.last_name || body.lastName || ''
-    const name = [firstName, lastName].filter(Boolean).join(' ') || ''
-    const ghlContactId = body.contact_id || body.id || ''
+    const name = body.name || [body.first_name || body.firstName || '', body.last_name || body.lastName || ''].filter(Boolean).join(' ') || ''
+    const ghlContactId = body.ghl_contact_id || body.contact_id || body.id || ''
 
     if (!email) {
       return { statusCode: 400, body: JSON.stringify({ error: 'No email in webhook payload' }) }
