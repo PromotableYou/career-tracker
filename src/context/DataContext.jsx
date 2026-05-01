@@ -35,8 +35,8 @@ export const DEFAULTS = {
 }
 
 function getUid() {
-  // Check URL first, then localStorage
-  const urlUid = new URLSearchParams(window.location.search).get('uid')
+  const params = new URLSearchParams(window.location.search)
+  const urlUid = params.get('uid')
   if (urlUid) {
     localStorage.setItem('py-tracker-uid', urlUid)
     return urlUid
@@ -44,21 +44,43 @@ function getUid() {
   return localStorage.getItem('py-tracker-uid') || null
 }
 
+function getEmailParam() {
+  return new URLSearchParams(window.location.search).get('email') || null
+}
+
 function mergeWithDefaults(saved) {
   return { ...DEFAULTS, ...saved }
 }
 
 export function DataProvider({ children }) {
-  const uid = getUid()
+  const [uid, setUid] = useState(getUid)
+  const emailParam = getEmailParam()
   const isBackend = !!uid
   const [data, setData] = useState(DEFAULTS)
-  const [loading, setLoading] = useState(isBackend)
-  const [hasAccess, setHasAccess] = useState(!isBackend ? null : true)
+  const [loading, setLoading] = useState(true)
+  const [hasAccess, setHasAccess] = useState(true)
   const saveTimer = useRef(null)
 
   // Load data on mount
   useEffect(() => {
-    if (isBackend) {
+    // If we have an email param but no uid, look up the token first
+    if (!uid && emailParam) {
+      fetch(`/api/lookup?email=${encodeURIComponent(emailParam)}`)
+        .then(res => res.ok ? res.json() : null)
+        .then(json => {
+          if (json?.token) {
+            localStorage.setItem('py-tracker-uid', json.token)
+            setUid(json.token)
+          } else {
+            setHasAccess(null)
+            setLoading(false)
+          }
+        })
+        .catch(() => { setHasAccess(null); setLoading(false) })
+      return
+    }
+
+    if (uid) {
       fetch(`/api/data?uid=${uid}`)
         .then(res => {
           if (res.status === 404) { setHasAccess(false); setLoading(false); return null }
@@ -70,7 +92,6 @@ export function DataProvider({ children }) {
           setLoading(false)
         })
         .catch(() => {
-          // Fall back to localStorage if API unreachable
           try {
             const raw = localStorage.getItem('career-tracker-data')
             if (raw) setData(mergeWithDefaults(JSON.parse(raw)))
@@ -78,18 +99,18 @@ export function DataProvider({ children }) {
           setLoading(false)
         })
     } else {
-      // No uid — use localStorage
       try {
         const raw = localStorage.getItem('career-tracker-data')
         if (raw) setData(mergeWithDefaults(JSON.parse(raw)))
       } catch {}
-      setHasAccess(null) // null = no uid, show NoAccess
+      setHasAccess(null)
+      setLoading(false)
     }
-  }, [])
+  }, [uid])
 
   // Save data (debounced)
   const saveData = useCallback((newData) => {
-    if (isBackend && uid) {
+    if (uid) {
       if (saveTimer.current) clearTimeout(saveTimer.current)
       saveTimer.current = setTimeout(() => {
         fetch(`/api/data?uid=${uid}`, {
