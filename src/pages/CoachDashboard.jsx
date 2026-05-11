@@ -151,6 +151,7 @@ export default function CoachDashboard({ coachKey }) {
                   const days = daysSince(m.lastActive)
                   const rowBg = days !== null && days > 14 ? 'bg-red-50/30' : ''
                   return (
+                    <>
                     <tr key={m.id} className={`border-b border-[#EEF3FA] last:border-0 hover:bg-[#F5F9FD] ${rowBg}`}>
                       <td className="px-4 py-3">
                         <p className="text-sm font-semibold text-[#263746]">{m.name}</p>
@@ -203,6 +204,7 @@ export default function CoachDashboard({ coachKey }) {
                         </td>
                       </tr>
                     )}
+                    </>
                   )
                 })}
               </tbody>
