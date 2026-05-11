@@ -1,27 +1,42 @@
+import { useState } from 'react'
 import { useData } from '../context/DataContext'
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react'
 
 const TYPE_OPTIONS = ['','Peer','Mentor','Recruiter','Hiring Manager','Alumni','Former colleague','Industry contact','Other']
 const DEPTH_OPTIONS = ['','Weak tie','Acquaintance','Established','Strong']
 const NETWORK_AREAS = ['','Target company','Target industry','Target role','General career','Alumni network','Other']
 
-const inputCls = "w-full border border-[#D8E4EC] rounded-lg px-2 py-1.5 text-xs text-[#263746] focus:outline-none focus:ring-2 focus:ring-[#6D99F2]/40 bg-white placeholder:text-[#7A8FA3]"
+const inputCls = "w-full border border-[#D8E4EC] rounded-lg px-3 py-2 text-sm text-[#263746] focus:outline-none focus:ring-2 focus:ring-[#6D99F2]/40 bg-white placeholder:text-[#7A8FA3]"
+const labelCls = "block text-xs font-semibold text-[#4A5C6B] mb-1"
 
 function newContact() {
   return { id: Date.now(), person: '', role: '', contact: '', goal: '', area: '', type: '', depth: '', leverage: '', strategy: '', lastContact: '' }
 }
 
+const DEPTH_COLORS = {
+  'Weak tie': 'bg-gray-100 text-gray-600',
+  'Acquaintance': 'bg-yellow-100 text-yellow-700',
+  'Established': 'bg-blue-100 text-blue-700',
+  'Strong': 'bg-emerald-100 text-emerald-700',
+}
+
 export default function Networking() {
   const { data, update } = useData()
   const contacts = data.networking || []
+  const [expanded, setExpanded] = useState(null)
 
   function set(next) { update('networking', next) }
-  function add() { set([...contacts, newContact()]) }
+  function add() {
+    const c = newContact()
+    set([...contacts, c])
+    setExpanded(c.id)
+  }
   function remove(id) { set(contacts.filter(c => c.id !== id)) }
   function upd(id, field, value) { set(contacts.map(c => c.id === id ? { ...c, [field]: value } : c)) }
+  function toggle(id) { setExpanded(expanded === id ? null : id) }
 
   return (
-    <div className="max-w-5xl">
+    <div className="max-w-4xl">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-2xl font-bold text-[#263746] mb-1 font-['Inter']">Networking</h2>
@@ -39,53 +54,99 @@ export default function Networking() {
         </div>
       )}
 
-      <div className="bg-white rounded-xl border border-[#D8E4EC] overflow-hidden">
-        {contacts.length > 0 && (
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs">
-              <thead className="bg-[#F8F5F2] border-b border-[#D8E4EC]">
-                <tr>
-                  {['Person','Their Role','Contact Details','Goal','Network Area','Type','Relationship','Leverage Area','Strategy','Last Contact',''].map(h => (
-                    <th key={h} className="text-left text-xs font-semibold text-[#4A5C6B] px-3 py-3 whitespace-nowrap">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {contacts.map(c => (
-                  <tr key={c.id} className="border-b border-[#EEF3FA] last:border-0 hover:bg-[#F5F9FD]">
-                    <td className="px-3 py-2"><input className={inputCls} value={c.person} onChange={e => upd(c.id,'person',e.target.value)} placeholder="Name" /></td>
-                    <td className="px-3 py-2"><input className={inputCls} value={c.role} onChange={e => upd(c.id,'role',e.target.value)} placeholder="Their role" /></td>
-                    <td className="px-3 py-2"><input className={inputCls} value={c.contact} onChange={e => upd(c.id,'contact',e.target.value)} placeholder="LinkedIn / email" /></td>
-                    <td className="px-3 py-2">
-                      <select className={inputCls} value={c.goal} onChange={e => upd(c.id,'goal',e.target.value)}>
-                        {['','Current role','Career goal'].map(o => <option key={o}>{o}</option>)}
-                      </select>
-                    </td>
-                    <td className="px-3 py-2">
-                      <select className={inputCls} value={c.area} onChange={e => upd(c.id,'area',e.target.value)}>
-                        {NETWORK_AREAS.map(o => <option key={o}>{o}</option>)}
-                      </select>
-                    </td>
-                    <td className="px-3 py-2">
-                      <select className={inputCls} value={c.type} onChange={e => upd(c.id,'type',e.target.value)}>
-                        {TYPE_OPTIONS.map(o => <option key={o}>{o}</option>)}
-                      </select>
-                    </td>
-                    <td className="px-3 py-2">
-                      <select className={inputCls} value={c.depth} onChange={e => upd(c.id,'depth',e.target.value)}>
-                        {DEPTH_OPTIONS.map(o => <option key={o}>{o}</option>)}
-                      </select>
-                    </td>
-                    <td className="px-3 py-2"><input className={inputCls} value={c.leverage} onChange={e => upd(c.id,'leverage',e.target.value)} placeholder="How they can help" /></td>
-                    <td className="px-3 py-2"><input className={inputCls} value={c.strategy} onChange={e => upd(c.id,'strategy',e.target.value)} placeholder="Next step" /></td>
-                    <td className="px-3 py-2"><input className={inputCls} type="date" value={c.lastContact} onChange={e => upd(c.id,'lastContact',e.target.value)} /></td>
-                    <td className="px-3 py-2"><button onClick={() => remove(c.id)} className="text-[#FF5E5B] hover:text-red-700 cursor-pointer"><Trash2 size={13} /></button></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      <div className="space-y-3">
+        {contacts.map(c => (
+          <div key={c.id} className="bg-white rounded-xl border border-[#D8E4EC] overflow-hidden">
+            {/* Card header */}
+            <div
+              className="flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-[#F5F9FD] transition-colors"
+              onClick={() => toggle(c.id)}
+            >
+              <div className="flex items-center gap-4 min-w-0">
+                <div className="w-9 h-9 rounded-full bg-[#EEF3FA] flex items-center justify-center text-sm font-bold text-[#6D99F2] flex-shrink-0">
+                  {c.person ? c.person.charAt(0).toUpperCase() : '?'}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-[#263746] truncate">{c.person || 'New contact'}</p>
+                  <p className="text-xs text-[#7A8FA3] truncate">{[c.role, c.area].filter(Boolean).join(' · ') || 'No details yet'}</p>
+                </div>
+                {c.depth && (
+                  <span className={`hidden sm:inline text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${DEPTH_COLORS[c.depth] || 'bg-gray-100 text-gray-600'}`}>
+                    {c.depth}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-3 flex-shrink-0 ml-3">
+                {c.lastContact && (
+                  <span className="hidden md:block text-xs text-[#7A8FA3]">Last: {new Date(c.lastContact).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}</span>
+                )}
+                <button
+                  onClick={e => { e.stopPropagation(); remove(c.id) }}
+                  className="text-[#D8E4EC] hover:text-[#FF5E5B] transition-colors cursor-pointer"
+                >
+                  <Trash2 size={15} />
+                </button>
+                {expanded === c.id ? <ChevronUp size={16} className="text-[#7A8FA3]" /> : <ChevronDown size={16} className="text-[#7A8FA3]" />}
+              </div>
+            </div>
+
+            {/* Expanded form */}
+            {expanded === c.id && (
+              <div className="px-5 pb-5 border-t border-[#EEF3FA]">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+                  <div>
+                    <label className={labelCls}>Name</label>
+                    <input className={inputCls} value={c.person} onChange={e => upd(c.id,'person',e.target.value)} placeholder="Full name" />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Their Role</label>
+                    <input className={inputCls} value={c.role} onChange={e => upd(c.id,'role',e.target.value)} placeholder="Job title / company" />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Contact Details</label>
+                    <input className={inputCls} value={c.contact} onChange={e => upd(c.id,'contact',e.target.value)} placeholder="LinkedIn / email" />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Goal</label>
+                    <select className={inputCls} value={c.goal} onChange={e => upd(c.id,'goal',e.target.value)}>
+                      {['','Current role','Career goal'].map(o => <option key={o}>{o}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelCls}>Network Area</label>
+                    <select className={inputCls} value={c.area} onChange={e => upd(c.id,'area',e.target.value)}>
+                      {NETWORK_AREAS.map(o => <option key={o}>{o}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelCls}>Contact Type</label>
+                    <select className={inputCls} value={c.type} onChange={e => upd(c.id,'type',e.target.value)}>
+                      {TYPE_OPTIONS.map(o => <option key={o}>{o}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelCls}>Relationship Depth</label>
+                    <select className={inputCls} value={c.depth} onChange={e => upd(c.id,'depth',e.target.value)}>
+                      {DEPTH_OPTIONS.map(o => <option key={o}>{o}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelCls}>Last Contact</label>
+                    <input className={inputCls} type="date" value={c.lastContact} onChange={e => upd(c.id,'lastContact',e.target.value)} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>Leverage Area</label>
+                    <input className={inputCls} value={c.leverage} onChange={e => upd(c.id,'leverage',e.target.value)} placeholder="How they can help" />
+                  </div>
+                  <div className="sm:col-span-2 lg:col-span-3">
+                    <label className={labelCls}>Strategy / Next Step</label>
+                    <input className={inputCls} value={c.strategy} onChange={e => upd(c.id,'strategy',e.target.value)} placeholder="What's your next move with this person?" />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
-        )}
+        ))}
       </div>
 
       {contacts.length > 0 && (
