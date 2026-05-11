@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useData } from '../context/DataContext'
-import { Plus, Trash2, ChevronDown, CheckCircle2, Circle } from 'lucide-react'
+import { Plus, Trash2, ChevronDown, CheckCircle2, Circle, Star } from 'lucide-react'
 
 const inputCls = "w-full border border-[#D8E4EC] rounded-lg px-3 py-2 text-sm text-[#263746] focus:outline-none focus:ring-2 focus:ring-[#6D99F2]/40 bg-white placeholder:text-[#7A8FA3]"
 const textareaCls = `${inputCls} resize-none`
@@ -18,6 +18,35 @@ function newInterview() {
   }
 }
 
+const Q_CATEGORIES = ['Behavioural', 'Situational', 'Competency', 'Culture fit', 'Career story', 'Technical', 'Other']
+
+const STARTER_QUESTIONS = [
+  { category: 'Career story', text: 'Tell me about yourself.' },
+  { category: 'Behavioural', text: 'Tell me about a time you dealt with conflict at work.' },
+  { category: 'Behavioural', text: 'Describe a time you failed and what you learned from it.' },
+  { category: 'Situational', text: 'How do you prioritise when you have multiple competing deadlines?' },
+  { category: 'Culture fit', text: 'Why do you want to work here?' },
+  { category: 'Career story', text: 'Where do you see yourself in 5 years?' },
+  { category: 'Competency', text: 'What are your greatest strengths?' },
+  { category: 'Competency', text: 'What is your biggest weakness?' },
+]
+
+function newQuestion(text = '', category = '') {
+  return { id: Date.now() + Math.random(), text, category, answer: '', confidence: 0, expanded: false }
+}
+
+function StarRating({ value, onChange }) {
+  return (
+    <div className="flex gap-0.5">
+      {[1,2,3,4,5].map(n => (
+        <button key={n} onClick={() => onChange(n)} className="cursor-pointer">
+          <Star size={14} className={n <= value ? 'text-[#D4AF37] fill-[#D4AF37]' : 'text-[#D8E4EC]'} />
+        </button>
+      ))}
+    </div>
+  )
+}
+
 const PREP_CHECKS = [
   { key: 'competency', label: 'Role competency reviewed' },
   { key: 'company', label: 'Company research done' },
@@ -29,7 +58,10 @@ const PREP_CHECKS = [
 export default function InterviewPrep() {
   const { data, update } = useData()
   const [expanded, setExpanded] = useState(null)
+  const [qExpanded, setQExpanded] = useState(null)
+  const [filterCat, setFilterCat] = useState('')
   const interviews = data.interviewPrep || []
+  const questions = data.questionBank || []
 
   function setInterviews(next) { update('interviewPrep', next) }
   function add() { const n = newInterview(); setInterviews([...interviews, n]); setExpanded(n.id) }
@@ -44,6 +76,26 @@ export default function InterviewPrep() {
     const arr = [...iv[field]]; arr[idx] = value
     upd(id, field, arr)
   }
+
+  // Question bank
+  function setQuestions(next) { update('questionBank', next) }
+  function addQuestion() {
+    const q = newQuestion()
+    setQuestions([...questions, q])
+    setQExpanded(q.id)
+  }
+  function addStarters() {
+    const existing = new Set(questions.map(q => q.text))
+    const toAdd = STARTER_QUESTIONS.filter(q => !existing.has(q.text)).map(q => newQuestion(q.text, q.category))
+    setQuestions([...questions, ...toAdd])
+  }
+  function removeQuestion(id) { setQuestions(questions.filter(q => q.id !== id)) }
+  function updQuestion(id, field, value) { setQuestions(questions.map(q => q.id === id ? { ...q, [field]: value } : q)) }
+
+  const filteredQuestions = filterCat ? questions.filter(q => q.category === filterCat) : questions
+  const avgConfidence = questions.filter(q => q.confidence > 0).length
+    ? (questions.filter(q => q.confidence > 0).reduce((s, q) => s + q.confidence, 0) / questions.filter(q => q.confidence > 0).length).toFixed(1)
+    : null
 
   return (
     <div className="max-w-4xl">
@@ -180,6 +232,103 @@ export default function InterviewPrep() {
             </div>
           )
         })}
+      </div>
+
+      {/* Question Bank */}
+      <div className="mt-10">
+        <div className="flex items-center justify-between mb-2">
+          <div>
+            <h2 className="text-xl font-bold text-[#263746] font-['Inter']">Question Bank</h2>
+            <p className="text-sm text-[#5A7080] italic font-['Playfair_Display']">Build your answer library. Rate your confidence on each one.</p>
+          </div>
+          <div className="flex gap-2">
+            {questions.length === 0 && (
+              <button onClick={addStarters} className="flex items-center gap-2 border border-[#D8E4EC] text-[#4A5C6B] hover:bg-[#F5F9FD] text-sm font-medium px-4 py-2 rounded-lg cursor-pointer transition-colors">
+                Load starter questions
+              </button>
+            )}
+            <button onClick={addQuestion} className="flex items-center gap-2 bg-[#263746] hover:bg-[#1a2832] text-white text-sm font-medium px-4 py-2 rounded-lg cursor-pointer transition-colors">
+              <Plus size={16} /> Add question
+            </button>
+          </div>
+        </div>
+
+        {/* Stats + filter */}
+        {questions.length > 0 && (
+          <div className="flex items-center gap-4 mb-4 flex-wrap">
+            <span className="text-xs text-[#7A8FA3]">{questions.length} question{questions.length !== 1 ? 's' : ''}</span>
+            {avgConfidence && <span className="text-xs text-[#7A8FA3]">Avg confidence: <span className="font-semibold text-[#263746]">{avgConfidence}/5</span></span>}
+            <div className="flex gap-1.5 flex-wrap ml-auto">
+              <button onClick={() => setFilterCat('')} className={`px-2.5 py-1 rounded-full text-xs font-medium cursor-pointer transition-colors ${!filterCat ? 'bg-[#263746] text-white' : 'bg-[#EEF3FA] text-[#4A5C6B] hover:bg-[#D8E4EC]'}`}>All</button>
+              {Q_CATEGORIES.map(cat => (
+                questions.some(q => q.category === cat) && (
+                  <button key={cat} onClick={() => setFilterCat(cat === filterCat ? '' : cat)} className={`px-2.5 py-1 rounded-full text-xs font-medium cursor-pointer transition-colors ${filterCat === cat ? 'bg-[#263746] text-white' : 'bg-[#EEF3FA] text-[#4A5C6B] hover:bg-[#D8E4EC]'}`}>{cat}</button>
+                )
+              ))}
+            </div>
+          </div>
+        )}
+
+        {questions.length === 0 && (
+          <div className="bg-white rounded-xl border border-[#D8E4EC] p-12 text-center">
+            <div className="text-4xl mb-3">💬</div>
+            <p className="text-[#7A8FA3] text-sm">No questions yet. Add your own or load the starter set.</p>
+          </div>
+        )}
+
+        <div className="space-y-2">
+          {filteredQuestions.map(q => {
+            const confColor = q.confidence >= 4 ? 'text-emerald-600' : q.confidence >= 2 ? 'text-amber-500' : 'text-[#FF5E5B]'
+            return (
+              <div key={q.id} className="bg-white rounded-xl border border-[#D8E4EC] overflow-hidden">
+                <div
+                  className="flex items-center gap-4 px-5 py-3.5 cursor-pointer hover:bg-[#F5F9FD]"
+                  onClick={() => setQExpanded(qExpanded === q.id ? null : q.id)}
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-[#263746] truncate">{q.text || 'New question'}</p>
+                  </div>
+                  <div className="flex items-center gap-3 flex-shrink-0">
+                    {q.category && <span className="hidden sm:block text-xs bg-[#EEF3FA] text-[#4A5C6B] px-2 py-0.5 rounded-full">{q.category}</span>}
+                    {q.confidence > 0 && (
+                      <span className={`text-xs font-semibold ${confColor}`}>{q.confidence}/5</span>
+                    )}
+                    {q.answer && <div className="w-2 h-2 rounded-full bg-[#6D99F2]" title="Answer saved" />}
+                    <button onClick={e => { e.stopPropagation(); removeQuestion(q.id) }} className="text-[#D8E4EC] hover:text-[#FF5E5B] transition-colors cursor-pointer"><Trash2 size={14} /></button>
+                    <ChevronDown size={15} className={`text-[#7A8FA3] transition-transform ${qExpanded === q.id ? 'rotate-180' : ''}`} />
+                  </div>
+                </div>
+
+                {qExpanded === q.id && (
+                  <div className="border-t border-[#EEF3FA] px-5 py-4 space-y-4">
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-semibold text-[#4A5C6B] mb-1">Question</label>
+                        <input className={inputCls} value={q.text} onChange={e => updQuestion(q.id,'text',e.target.value)} placeholder="Enter the interview question" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-[#4A5C6B] mb-1">Category</label>
+                        <select className={inputCls} value={q.category} onChange={e => updQuestion(q.id,'category',e.target.value)}>
+                          <option value="">Select category</option>
+                          {Q_CATEGORIES.map(c => <option key={c}>{c}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-[#4A5C6B] mb-1">Your Answer</label>
+                      <textarea className={`${textareaCls}`} rows={4} value={q.answer} onChange={e => updQuestion(q.id,'answer',e.target.value)} placeholder="Write your prepared answer here — use STAR format for behavioural questions" />
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs font-semibold text-[#4A5C6B]">Confidence</span>
+                      <StarRating value={q.confidence} onChange={v => updQuestion(q.id,'confidence',v)} />
+                      {q.confidence > 0 && <span className="text-xs text-[#7A8FA3]">{['','Not ready','Getting there','Fairly confident','Confident','Nailed it'][q.confidence]}</span>}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
       </div>
     </div>
   )
