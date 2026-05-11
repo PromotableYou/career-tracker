@@ -1,6 +1,9 @@
 import { useData } from '../context/DataContext'
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
-import { Briefcase, Users, TrendingUp, Calendar, AlertCircle, CheckCircle, Clock } from 'lucide-react'
+import {
+  PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
+  LineChart, Line, XAxis, YAxis, CartesianGrid, BarChart, Bar
+} from 'recharts'
+import { Briefcase, Users, TrendingUp, Calendar, AlertCircle, CheckCircle, Clock, Target } from 'lucide-react'
 
 const COLORS = ['#263746','#6D99F2','#9999FF','#D4AF37','#FF5E5B','#FBD872','#344f66']
 
@@ -15,6 +18,17 @@ const QUOTES = [
   "Networking is just being kind on purpose.",
   "Your story is your strategy.",
   "Apply for the role you want, not the one you think you're allowed.",
+]
+
+const BP_CATEGORIES = [
+  { key: 'company', label: 'Company' },
+  { key: 'culture', label: 'Culture' },
+  { key: 'team', label: 'Team' },
+  { key: 'manager', label: 'Manager' },
+  { key: 'tasks', label: 'Tasks' },
+  { key: 'values', label: 'Values' },
+  { key: 'environment', label: 'Environment' },
+  { key: 'salary', label: 'Salary' },
 ]
 
 function getQuote() {
@@ -44,6 +58,70 @@ function appsThisWeek(applications) {
   return applications.filter(a => a.submittedDate && new Date(a.submittedDate) >= weekAgo).length
 }
 
+function getApplicationsOverTime(applications) {
+  if (!applications.length) return []
+  const byWeek = {}
+  applications.forEach(a => {
+    if (!a.submittedDate) return
+    const d = new Date(a.submittedDate)
+    const weekStart = new Date(d)
+    weekStart.setDate(d.getDate() - d.getDay())
+    const key = weekStart.toISOString().slice(0, 10)
+    byWeek[key] = (byWeek[key] || 0) + 1
+  })
+  return Object.entries(byWeek)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([date, count]) => ({
+      week: new Date(date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }),
+      apps: count,
+    }))
+}
+
+function getRoleFitScore(applications) {
+  const rated = applications.filter(a => a.blueprintRatings && Object.keys(a.blueprintRatings).length > 0)
+  if (!rated.length) return null
+
+  // Average score per category across all rated apps
+  const catTotals = {}
+  const catCounts = {}
+  rated.forEach(a => {
+    BP_CATEGORIES.forEach(({ key }) => {
+      const val = parseInt(a.blueprintRatings[key]) || 0
+      if (val > 0) {
+        catTotals[key] = (catTotals[key] || 0) + val
+        catCounts[key] = (catCounts[key] || 0) + 1
+      }
+    })
+  })
+
+  const catAverages = BP_CATEGORIES.map(({ key, label }) => ({
+    label,
+    avg: catCounts[key] ? catTotals[key] / catCounts[key] : 0,
+  })).filter(c => c.avg > 0)
+
+  if (!catAverages.length) return null
+
+  const overallAvg = catAverages.reduce((s, c) => s + c.avg, 0) / catAverages.length
+  const pct = (overallAvg / 5) * 100
+  const color = pct >= 70 ? 'emerald' : pct >= 40 ? 'amber' : 'red'
+
+  // Best fitting role
+  const best = rated.reduce((best, a) => {
+    const total = BP_CATEGORIES.reduce((s, { key }) => s + (parseInt(a.blueprintRatings[key]) || 0), 0)
+    return total > (best?.total || 0) ? { ...a, total } : best
+  }, null)
+
+  return { overallAvg, pct, color, catAverages, best, ratedCount: rated.length }
+}
+
+function getPipelineData(applications) {
+  const stages = ['Applied', 'Awaiting Response', 'Interview Scheduled', 'Offer Received']
+  return stages.map(stage => ({
+    stage: stage.replace(' ', '\n'),
+    count: applications.filter(a => a.status === stage).length,
+  }))
+}
+
 export default function Dashboard({ navigate }) {
   const { data } = useData()
   const { profile, applications, networking, weeklyCheckins } = data
@@ -64,6 +142,15 @@ export default function Dashboard({ navigate }) {
   const firstApp = applications.length > 0
   const firstInterview = applications.some(a => a.interviewDate)
   const firstOffer = data.offers?.length > 0
+
+  const appOverTime = getApplicationsOverTime(applications)
+  const roleFit = getRoleFitScore(applications)
+  const pipeline = getPipelineData(applications)
+
+  const fitColor = roleFit?.color === 'emerald' ? '#10b981' : roleFit?.color === 'amber' ? '#f59e0b' : '#FF5E5B'
+  const fitBg = roleFit?.color === 'emerald' ? 'bg-emerald-50' : roleFit?.color === 'amber' ? 'bg-amber-50' : 'bg-red-50'
+  const fitText = roleFit?.color === 'emerald' ? 'text-emerald-600' : roleFit?.color === 'amber' ? 'text-amber-600' : 'text-red-500'
+  const fitVerdict = roleFit?.pct >= 70 ? 'Strong alignment' : roleFit?.pct >= 40 ? 'Moderate alignment' : 'Low alignment'
 
   return (
     <div className="max-w-5xl">
@@ -121,6 +208,113 @@ export default function Dashboard({ navigate }) {
             <div className="text-xs text-[#7A8FA3]">{sub}</div>
           </div>
         ))}
+      </div>
+
+      {/* Role Fit Score */}
+      {roleFit ? (
+        <div className="bg-white rounded-xl p-6 border border-[#D8E4EC] mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Target size={18} className="text-[#6D99F2]" />
+              <h3 className="font-semibold text-[#263746] font-['Inter']">Role Fit Score</h3>
+            </div>
+            <div className={`px-3 py-1 rounded-full text-xs font-semibold ${fitBg} ${fitText}`}>
+              {fitVerdict}
+            </div>
+          </div>
+
+          <div className="grid lg:grid-cols-2 gap-6">
+            {/* Overall score */}
+            <div>
+              <div className="flex items-end gap-3 mb-3">
+                <span className="text-5xl font-bold text-[#263746] font-['Inter']">{roleFit.overallAvg.toFixed(1)}</span>
+                <span className="text-lg text-[#7A8FA3] mb-1">/5</span>
+                <span className="text-sm text-[#7A8FA3] mb-1.5">avg across {roleFit.ratedCount} role{roleFit.ratedCount !== 1 ? 's' : ''}</span>
+              </div>
+              <div className="w-full h-3 bg-[#EEF3FA] rounded-full overflow-hidden mb-3">
+                <div
+                  className="h-full rounded-full transition-all duration-500"
+                  style={{ width: `${roleFit.pct}%`, backgroundColor: fitColor }}
+                />
+              </div>
+              {roleFit.best && (
+                <p className="text-xs text-[#7A8FA3]">
+                  Best fit: <span className="font-semibold text-[#263746]">{roleFit.best.jobRole || 'Untitled'}</span>
+                  {roleFit.best.company ? ` at ${roleFit.best.company}` : ''}
+                  {' '}({roleFit.best.total}/{BP_CATEGORIES.length * 5})
+                </p>
+              )}
+            </div>
+
+            {/* Category breakdown */}
+            <div className="space-y-2">
+              {roleFit.catAverages.sort((a, b) => b.avg - a.avg).map(({ label, avg }) => {
+                const pct = (avg / 5) * 100
+                const barColor = pct >= 70 ? '#10b981' : pct >= 40 ? '#f59e0b' : '#FF5E5B'
+                return (
+                  <div key={label} className="flex items-center gap-3">
+                    <span className="text-xs text-[#4A5C6B] w-20 flex-shrink-0">{label}</span>
+                    <div className="flex-1 h-2 bg-[#EEF3FA] rounded-full overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: barColor }} />
+                    </div>
+                    <span className="text-xs font-semibold text-[#263746] w-6 text-right">{avg.toFixed(1)}</span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-white rounded-xl p-6 border border-[#D8E4EC] mb-6">
+          <div className="flex items-center gap-2 mb-2">
+            <Target size={18} className="text-[#6D99F2]" />
+            <h3 className="font-semibold text-[#263746] font-['Inter']">Role Fit Score</h3>
+          </div>
+          <p className="text-sm text-[#7A8FA3]">Rate blueprint alignment on your role applications to see your fit score here.</p>
+        </div>
+      )}
+
+      {/* Progress chart + Pipeline */}
+      <div className="grid lg:grid-cols-2 gap-6 mb-6">
+        {/* Applications over time */}
+        <div className="bg-white rounded-xl p-6 border border-[#D8E4EC]">
+          <h3 className="font-semibold text-[#263746] mb-4 font-['Inter']">Applications Over Time</h3>
+          {appOverTime.length > 1 ? (
+            <ResponsiveContainer width="100%" height={180}>
+              <LineChart data={appOverTime}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#EEF3FA" />
+                <XAxis dataKey="week" tick={{ fontSize: 10, fill: '#7A8FA3' }} />
+                <YAxis tick={{ fontSize: 10, fill: '#7A8FA3' }} allowDecimals={false} />
+                <Tooltip contentStyle={{ fontSize: 12 }} />
+                <Line type="monotone" dataKey="apps" stroke="#6D99F2" strokeWidth={2} dot={{ fill: '#6D99F2', r: 3 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-[180px] flex items-center justify-center text-[#7A8FA3] text-sm">
+              Log applications with dates to see your progress
+            </div>
+          )}
+        </div>
+
+        {/* Pipeline */}
+        <div className="bg-white rounded-xl p-6 border border-[#D8E4EC]">
+          <h3 className="font-semibold text-[#263746] mb-4 font-['Inter']">Application Pipeline</h3>
+          {totalApps > 0 ? (
+            <ResponsiveContainer width="100%" height={180}>
+              <BarChart data={pipeline} barSize={32}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#EEF3FA" />
+                <XAxis dataKey="stage" tick={{ fontSize: 10, fill: '#7A8FA3' }} />
+                <YAxis tick={{ fontSize: 10, fill: '#7A8FA3' }} allowDecimals={false} />
+                <Tooltip contentStyle={{ fontSize: 12 }} />
+                <Bar dataKey="count" fill="#263746" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-[180px] flex items-center justify-center text-[#7A8FA3] text-sm">
+              Add applications to see your pipeline
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6 mb-6">
