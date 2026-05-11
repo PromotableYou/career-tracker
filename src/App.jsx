@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { DataProvider, useData } from './context/DataContext'
+import CoachDashboard from './pages/CoachDashboard'
 import NoAccess from './pages/NoAccess'
 import Dashboard from './pages/Dashboard'
 import Profile from './pages/Profile'
@@ -283,6 +284,9 @@ function AppInner() {
 }
 
 export default function App() {
+  const coachKey = new URLSearchParams(window.location.search).get('coach')
+  if (coachKey) return <CoachDashboard coachKey={coachKey} />
+
   return (
     <DataProvider>
       <AppInner />
