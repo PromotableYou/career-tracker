@@ -5,7 +5,7 @@ const SESSION_TYPES = ['General Q&A','Confidence & Clarity','Group Coaching','Re
 const inputCls = "w-full border border-[#D8E4EC] rounded-lg px-2 py-1.5 text-xs text-[#263746] focus:outline-none focus:ring-2 focus:ring-[#6D99F2]/40 bg-white placeholder:text-[#7A8FA3]"
 
 function newSession() {
-  return { id: Date.now(), date: '', type: '', takeaway: '', nextStep: '', done: false }
+  return { id: Date.now(), date: '', type: '', breakoutRoom: '', takeaway: '', nextStep: '', done: false }
 }
 
 export default function Coaching() {
@@ -61,6 +61,10 @@ export default function Coaching() {
                     <option value="">Select type...</option>
                     {SESSION_TYPES.map(t => <option key={t}>{t}</option>)}
                   </select>
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Breakout Room</label>
+                  <input className={inputCls} value={s.breakoutRoom || ''} onChange={e => upd(s.id,'breakoutRoom',e.target.value)} placeholder="Which breakout room did you attend?" />
                 </div>
                 <div className="col-span-2">
                   <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Key Takeaway</label>
