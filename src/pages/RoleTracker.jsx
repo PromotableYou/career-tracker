@@ -115,11 +115,22 @@ export default function RoleTracker() {
 
       <div className="space-y-3">
         {apps.map((app) => (
-          <div key={app.id} className="bg-white rounded-xl border border-[#D8E4EC] overflow-hidden">
+          <div key={app.id} className={`bg-white rounded-xl overflow-hidden border-2 ${app.vibe === 'green' ? 'border-emerald-400' : app.vibe === 'amber' ? 'border-amber-400' : app.vibe === 'red' ? 'border-red-400' : 'border-[#D8E4EC]'}`}>
             <div
               className="flex items-center gap-4 px-5 py-4 cursor-pointer hover:bg-[#F5F9FD]"
               onClick={() => setExpanded(expanded === app.id ? null : app.id)}
             >
+              {/* Traffic light */}
+              <div className="flex gap-1 flex-shrink-0" onClick={e => e.stopPropagation()}>
+                {[['green','🟢'],['amber','🟡'],['red','🔴']].map(([v, emoji]) => (
+                  <button
+                    key={v}
+                    onClick={() => updateApp(app.id, 'vibe', app.vibe === v ? '' : v)}
+                    className={`text-sm transition-all cursor-pointer ${app.vibe === v ? 'opacity-100 scale-110' : 'opacity-25 hover:opacity-60'}`}
+                    title={v === 'green' ? 'Feeling good' : v === 'amber' ? 'Feeling neutral' : 'Feeling concerned'}
+                  >{emoji}</button>
+                ))}
+              </div>
               <span className={`text-xs font-medium px-2.5 py-1 rounded-full flex-shrink-0 ${STATUS_COLORS[app.status] || 'bg-[#F5F9FD] text-[#7A8FA3]'}`}>
                 {app.status}
               </span>
