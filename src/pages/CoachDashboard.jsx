@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { Users, Briefcase, TrendingUp, Calendar, AlertCircle, CheckCircle, Clock, ExternalLink, Search } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Users, Briefcase, TrendingUp, Calendar, AlertCircle, CheckCircle, Clock, ExternalLink, Search, ChevronDown, StickyNote } from 'lucide-react'
 
 function daysSince(dateStr) {
   if (!dateStr) return null
@@ -20,13 +20,34 @@ export default function CoachDashboard({ coachKey }) {
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState('lastActive')
+  const [notesOpen, setNotesOpen] = useState(null)
+  const [notesDraft, setNotesDraft] = useState({})
+  const saveTimers = useRef({})
 
   useEffect(() => {
     fetch(`/api/admin?key=${coachKey}`)
       .then(res => res.ok ? res.json() : res.json().then(j => { throw new Error(j.error) }))
-      .then(json => { setMembers(json.members); setLoading(false) })
+      .then(json => {
+        setMembers(json.members)
+        const drafts = {}
+        json.members.forEach(m => { drafts[m.id] = m.coachNotes || '' })
+        setNotesDraft(drafts)
+        setLoading(false)
+      })
       .catch(err => { setError(err.message); setLoading(false) })
   }, [coachKey])
+
+  function updateNotes(memberId, value) {
+    setNotesDraft(prev => ({ ...prev, [memberId]: value }))
+    if (saveTimers.current[memberId]) clearTimeout(saveTimers.current[memberId])
+    saveTimers.current[memberId] = setTimeout(() => {
+      fetch(`/api/admin?key=${coachKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ memberId, notes: value }),
+      })
+    }, 800)
+  }
 
   if (loading) return (
     <div className="min-h-screen bg-[#F8F5F2] flex items-center justify-center">
@@ -120,7 +141,7 @@ export default function CoachDashboard({ coachKey }) {
             <table className="w-full">
               <thead className="bg-[#F8F5F2] border-b border-[#D8E4EC]">
                 <tr>
-                  {['Member','Target Role','Last Active','Apps','Interviews','Offers','Networking','Check-ins',''].map(h => (
+                  {['Member','Target Role','Last Active','Apps','Interviews','Offers','Networking','Check-ins','Notes',''].map(h => (
                     <th key={h} className="text-left text-xs font-semibold text-[#4A5C6B] px-4 py-3 whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
@@ -143,6 +164,15 @@ export default function CoachDashboard({ coachKey }) {
                       <td className="px-4 py-3 text-sm text-[#4A5C6B]">{m.networking}</td>
                       <td className="px-4 py-3 text-sm text-[#4A5C6B]">{m.checkinsSubmitted}</td>
                       <td className="px-4 py-3">
+                        <button
+                          onClick={() => setNotesOpen(notesOpen === m.id ? null : m.id)}
+                          className={`flex items-center gap-1 text-xs cursor-pointer transition-colors ${notesDraft[m.id] ? 'text-[#D4AF37]' : 'text-[#D8E4EC] hover:text-[#7A8FA3]'}`}
+                        >
+                          <StickyNote size={14} />
+                          {notesDraft[m.id] ? 'View' : 'Add'}
+                        </button>
+                      </td>
+                      <td className="px-4 py-3">
                         <a
                           href={`https://pycaptracker.netlify.app?uid=${m.token}`}
                           target="_blank"
@@ -153,6 +183,26 @@ export default function CoachDashboard({ coachKey }) {
                         </a>
                       </td>
                     </tr>
+                    {notesOpen === m.id && (
+                      <tr key={`${m.id}-notes`} className="bg-amber-50/50 border-b border-[#EEF3FA]">
+                        <td colSpan={10} className="px-4 py-3">
+                          <div className="flex items-start gap-2">
+                            <StickyNote size={14} className="text-[#D4AF37] mt-2 flex-shrink-0" />
+                            <div className="flex-1">
+                              <p className="text-xs font-semibold text-[#4A5C6B] mb-1">Coach notes — private, not visible to member</p>
+                              <textarea
+                                className="w-full border border-[#D8E4EC] rounded-lg px-3 py-2 text-sm text-[#263746] focus:outline-none focus:ring-2 focus:ring-[#D4AF37]/40 bg-white placeholder:text-[#7A8FA3] resize-none"
+                                rows={3}
+                                value={notesDraft[m.id] || ''}
+                                onChange={e => updateNotes(m.id, e.target.value)}
+                                placeholder="Add private notes about this member..."
+                              />
+                              <p className="text-xs text-[#7A8FA3] mt-1">Saves automatically</p>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
                   )
                 })}
               </tbody>

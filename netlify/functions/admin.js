@@ -12,10 +12,22 @@ exports.handler = async (event) => {
     return { statusCode: 401, body: JSON.stringify({ error: 'Unauthorised' }) }
   }
 
+  // Save coach notes (POST)
+  if (event.httpMethod === 'POST') {
+    const { memberId, notes } = JSON.parse(event.body || '{}')
+    if (!memberId) return { statusCode: 400, body: JSON.stringify({ error: 'No memberId' }) }
+    const { error: updateError } = await supabase
+      .from('members')
+      .update({ coach_notes: notes })
+      .eq('id', memberId)
+    if (updateError) return { statusCode: 500, body: JSON.stringify({ error: updateError.message }) }
+    return { statusCode: 200, body: JSON.stringify({ success: true }) }
+  }
+
   // Get all members
   const { data: members, error } = await supabase
     .from('members')
-    .select('id, name, email, token, last_active, created_at')
+    .select('id, name, email, token, last_active, created_at, coach_notes')
     .order('last_active', { ascending: false, nullsFirst: false })
 
   if (error) {
@@ -48,6 +60,7 @@ exports.handler = async (event) => {
       token: m.token,
       lastActive: m.last_active,
       createdAt: m.created_at,
+      coachNotes: m.coach_notes || '',
       totalApps: apps.length,
       interviews,
       offers,
