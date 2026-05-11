@@ -197,7 +197,7 @@ export default function Dashboard({ navigate }) {
           { label: 'Apps this week', value: appsWeek, sub: `Target: ${profile.weeklyAppTarget || 5}`, icon: Briefcase, color: 'text-[#263746]', bg: 'bg-[#EEF3FA]' },
           { label: 'Networking this week', value: networkingWeek, sub: `Target: ${profile.weeklyNetworkTarget || 3}`, icon: Users, color: 'text-[#6D99F2]', bg: 'bg-[#EEF3FA]' },
           { label: 'Total applications', value: totalApps, sub: 'All time', icon: TrendingUp, color: 'text-[#263746]', bg: 'bg-[#EEF3FA]' },
-          { label: 'Interviews secured', value: interviews, sub: `${convRate}% conversion`, icon: Calendar, color: 'text-[#D4AF37]', bg: 'bg-amber-50' },
+          { label: 'Interviews secured', value: interviews, sub: 'All time', icon: Calendar, color: 'text-[#D4AF37]', bg: 'bg-amber-50' },
         ].map(({ label, value, sub, icon: Icon, color, bg }) => (
           <div key={label} className="bg-white rounded-xl p-5 border border-[#D8E4EC]">
             <div className={`inline-flex p-2 rounded-lg ${bg} mb-3`}>
@@ -344,7 +344,6 @@ export default function Dashboard({ navigate }) {
             {[
               ['Total applications', totalApps],
               ['Interviews secured', interviews],
-              ['Conversion rate', `${convRate}%`],
               ['Weeks active', weeks],
               ['Days since last activity', days !== null ? days : '--'],
             ].map(([label, val]) => (
