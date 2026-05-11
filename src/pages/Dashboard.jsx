@@ -1,9 +1,10 @@
+import React from 'react'
 import { useData } from '../context/DataContext'
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
   LineChart, Line, XAxis, YAxis, CartesianGrid, BarChart, Bar
 } from 'recharts'
-import { Briefcase, Users, TrendingUp, Calendar, AlertCircle, CheckCircle, Clock, Target } from 'lucide-react'
+import { Briefcase, Users, TrendingUp, Calendar, AlertCircle, CheckCircle, Clock, Target, Flame, Plus, Trophy } from 'lucide-react'
 
 const COLORS = ['#263746','#6D99F2','#9999FF','#D4AF37','#FF5E5B','#FBD872','#344f66']
 
@@ -114,6 +115,31 @@ function getRoleFitScore(applications) {
   return { overallAvg, pct, color, catAverages, best, ratedCount: rated.length }
 }
 
+function getStreak(applications, networking) {
+  const activityDates = new Set()
+  applications.forEach(a => { if (a.submittedDate) activityDates.add(a.submittedDate.slice(0, 10)) })
+  networking.forEach(n => { if (n.lastContact) activityDates.add(n.lastContact.slice(0, 10)) })
+  if (!activityDates.size) return 0
+  let streak = 0
+  const today = new Date()
+  for (let i = 0; i <= 365; i++) {
+    const d = new Date(today)
+    d.setDate(today.getDate() - i)
+    const key = d.toISOString().slice(0, 10)
+    if (activityDates.has(key)) streak++
+    else if (i > 0) break
+  }
+  return streak
+}
+
+function getOverdueFollowUps(applications) {
+  const today = new Date().toISOString().slice(0, 10)
+  return applications.filter(a =>
+    a.followUpDate && a.followUpDate <= today && !a.followUpDone &&
+    !['Offer Received', 'Rejected', 'Withdrawn'].includes(a.status)
+  )
+}
+
 function getPipelineData(applications) {
   const stages = ['Applied', 'Awaiting Response', 'Interview Scheduled', 'Offer Received']
   return stages.map(stage => ({
@@ -123,7 +149,7 @@ function getPipelineData(applications) {
 }
 
 export default function Dashboard({ navigate }) {
-  const { data } = useData()
+  const { data, update } = useData()
   const { profile, applications, networking, weeklyCheckins } = data
 
   const totalApps = applications.length
@@ -146,6 +172,21 @@ export default function Dashboard({ navigate }) {
   const appOverTime = getApplicationsOverTime(applications)
   const roleFit = getRoleFitScore(applications)
   const pipeline = getPipelineData(applications)
+  const streak = getStreak(applications, networking)
+  const overdueFollowUps = getOverdueFollowUps(applications)
+  const wins = data.wins || []
+  const [newWin, setNewWin] = React.useState('')
+
+  function addWin(e) {
+    e.preventDefault()
+    if (!newWin.trim()) return
+    update('wins', [{ id: Date.now(), text: newWin.trim(), date: new Date().toISOString().slice(0, 10) }, ...wins])
+    setNewWin('')
+  }
+  function removeWin(id) { update('wins', wins.filter(w => w.id !== id)) }
+  function markFollowUpDone(id) {
+    update('applications', applications.map(a => a.id === id ? { ...a, followUpDone: true } : a))
+  }
 
   const fitColor = roleFit?.color === 'emerald' ? '#10b981' : roleFit?.color === 'amber' ? '#f59e0b' : '#FF5E5B'
   const fitBg = roleFit?.color === 'emerald' ? 'bg-emerald-50' : roleFit?.color === 'amber' ? 'bg-amber-50' : 'bg-red-50'
@@ -208,6 +249,115 @@ export default function Dashboard({ navigate }) {
             <div className="text-xs text-[#7A8FA3]">{sub}</div>
           </div>
         ))}
+      </div>
+
+      {/* Streak + Progress bars */}
+      <div className="grid sm:grid-cols-3 gap-4 mb-6">
+        {/* Streak */}
+        <div className="bg-white rounded-xl p-5 border border-[#D8E4EC] flex items-center gap-4">
+          <div className={`text-4xl ${streak > 0 ? '' : 'grayscale opacity-40'}`}>🔥</div>
+          <div>
+            <div className="text-3xl font-bold text-[#263746] font-['Inter']">{streak}</div>
+            <div className="text-xs font-semibold text-[#263746]">Day streak</div>
+            <div className="text-xs text-[#7A8FA3]">{streak > 0 ? 'Keep it going!' : 'Log activity to start'}</div>
+          </div>
+        </div>
+
+        {/* Apps progress */}
+        <div className="bg-white rounded-xl p-5 border border-[#D8E4EC]">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-semibold text-[#263746]">Applications this week</span>
+            <span className="text-xs text-[#7A8FA3]">{appsWeek} / {profile.weeklyAppTarget || 5}</span>
+          </div>
+          <div className="w-full h-3 bg-[#EEF3FA] rounded-full overflow-hidden mb-1">
+            <div
+              className={`h-full rounded-full transition-all duration-500 ${appsWeek >= (profile.weeklyAppTarget || 5) ? 'bg-emerald-500' : 'bg-[#6D99F2]'}`}
+              style={{ width: `${Math.min(100, (appsWeek / (profile.weeklyAppTarget || 5)) * 100)}%` }}
+            />
+          </div>
+          <p className="text-xs text-[#7A8FA3]">
+            {appsWeek >= (profile.weeklyAppTarget || 5) ? '🎉 Target hit!' : `${(profile.weeklyAppTarget || 5) - appsWeek} to go`}
+          </p>
+        </div>
+
+        {/* Networking progress */}
+        <div className="bg-white rounded-xl p-5 border border-[#D8E4EC]">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-semibold text-[#263746]">Networking this week</span>
+            <span className="text-xs text-[#7A8FA3]">{networkingWeek} / {profile.weeklyNetworkTarget || 3}</span>
+          </div>
+          <div className="w-full h-3 bg-[#EEF3FA] rounded-full overflow-hidden mb-1">
+            <div
+              className={`h-full rounded-full transition-all duration-500 ${networkingWeek >= (profile.weeklyNetworkTarget || 3) ? 'bg-emerald-500' : 'bg-[#6D99F2]'}`}
+              style={{ width: `${Math.min(100, (networkingWeek / (profile.weeklyNetworkTarget || 3)) * 100)}%` }}
+            />
+          </div>
+          <p className="text-xs text-[#7A8FA3]">
+            {networkingWeek >= (profile.weeklyNetworkTarget || 3) ? '🎉 Target hit!' : `${(profile.weeklyNetworkTarget || 3) - networkingWeek} to go`}
+          </p>
+        </div>
+      </div>
+
+      {/* Follow-up alerts */}
+      {overdueFollowUps.length > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+          <div className="flex items-center gap-2 mb-3">
+            <AlertCircle size={16} className="text-amber-600" />
+            <span className="text-sm font-semibold text-amber-800">{overdueFollowUps.length} follow-up{overdueFollowUps.length !== 1 ? 's' : ''} overdue</span>
+          </div>
+          <div className="space-y-2">
+            {overdueFollowUps.map(a => (
+              <div key={a.id} className="flex items-center justify-between gap-3 bg-white rounded-lg px-3 py-2 border border-amber-100">
+                <div>
+                  <span className="text-sm font-medium text-[#263746]">{a.company || 'Untitled'}</span>
+                  {a.jobRole && <span className="text-xs text-[#7A8FA3] ml-2">{a.jobRole}</span>}
+                  <span className="text-xs text-amber-600 ml-2">Due {a.followUpDate}</span>
+                </div>
+                <button onClick={() => markFollowUpDone(a.id)} className="text-xs text-emerald-600 font-medium hover:underline cursor-pointer flex-shrink-0">
+                  Mark done
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Win log */}
+      <div className="bg-white rounded-xl p-6 border border-[#D8E4EC] mb-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Trophy size={18} className="text-[#D4AF37]" />
+          <h3 className="font-semibold text-[#263746] font-['Inter']">Win Log</h3>
+          <span className="text-xs text-[#7A8FA3] ml-1">— celebrate the small stuff</span>
+        </div>
+        <form onSubmit={addWin} className="flex gap-2 mb-4">
+          <input
+            className="flex-1 border border-[#D8E4EC] rounded-lg px-3 py-2 text-sm text-[#263746] placeholder:text-[#7A8FA3] focus:outline-none focus:ring-2 focus:ring-[#6D99F2]/40"
+            placeholder="Log a win... e.g. Got a callback from Google!"
+            value={newWin}
+            onChange={e => setNewWin(e.target.value)}
+          />
+          <button type="submit" className="bg-[#263746] hover:bg-[#1a2832] text-white px-4 py-2 rounded-lg text-sm font-medium cursor-pointer transition-colors flex items-center gap-1">
+            <Plus size={14} /> Add
+          </button>
+        </form>
+        {wins.length === 0 ? (
+          <p className="text-sm text-[#7A8FA3] italic text-center py-4">No wins logged yet — they don't have to be big!</p>
+        ) : (
+          <div className="space-y-2 max-h-48 overflow-y-auto">
+            {wins.map(w => (
+              <div key={w.id} className="flex items-center justify-between gap-3 bg-[#F8F5F2] rounded-lg px-3 py-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm">🏆</span>
+                  <span className="text-sm text-[#263746]">{w.text}</span>
+                </div>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <span className="text-xs text-[#7A8FA3]">{w.date}</span>
+                  <button onClick={() => removeWin(w.id)} className="text-[#D8E4EC] hover:text-[#FF5E5B] transition-colors cursor-pointer text-xs">✕</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Role Fit Score */}

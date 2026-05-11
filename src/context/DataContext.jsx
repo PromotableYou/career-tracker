@@ -25,6 +25,7 @@ export const DEFAULTS = {
   linkedinOutreach: [],
   interviewPrep: [],
   questionBank: [],
+  wins: [],
   salary: [],
   offers: [],
   coaching: [],

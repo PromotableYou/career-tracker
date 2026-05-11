@@ -64,6 +64,7 @@ function newApp() {
     blueprintRatings: {}, selectedResume: '',
     connectedHM: false, connectionMsg: false, hmContact: '', hmRole: '',
     notes: '', resumeLink: '', coverLetterLink: '', closeDate: '', submittedDate: '',
+    followUpDate: '', followUpDone: false,
     outcome: '', interviewDate: '', interviewStage: '', prepDone: false,
     interviewOutcome: '', feedback: '', additionalNotes: '',
   }
@@ -158,6 +159,10 @@ export default function RoleTracker() {
                   <div>
                     <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Submitted Date</label>
                     <input className={inputCls} type="date" value={app.submittedDate} onChange={e => updateApp(app.id, 'submittedDate', e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Follow-up Date</label>
+                    <input className={inputCls} type="date" value={app.followUpDate || ''} onChange={e => updateApp(app.id, 'followUpDate', e.target.value)} />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Resume Used</label>
