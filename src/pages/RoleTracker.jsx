@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useData } from '../context/DataContext'
-import { Plus, Trash2, ChevronDown, ExternalLink } from 'lucide-react'
+import { Plus, Trash2, ChevronDown, ExternalLink, Info } from 'lucide-react'
 import FileUpload from '../components/FileUpload'
 
 const STATUS_OPTIONS = ['Not Started', 'Researching', 'Applied', 'Awaiting Response', 'Interview Scheduled', 'Offer Received', 'Rejected', 'Withdrawn']
@@ -229,11 +229,18 @@ export default function RoleTracker() {
 
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                     {BP_CATEGORIES.map(({ key, label }) => (
-                      <div key={key}>
-                        <label className="block text-[10px] font-medium text-[#4A5C6B] mb-1">{label}</label>
-                        {blueprint[key] && (
-                          <p className="text-[10px] text-[#7A8FA3] italic mb-1.5 line-clamp-2" title={blueprint[key]}>{blueprint[key]}</p>
-                        )}
+                      <div key={key} className="relative group">
+                        <label className="flex items-center gap-1 text-[10px] font-medium text-[#4A5C6B] mb-1 cursor-default">
+                          {label}
+                          <Info size={10} className="text-[#7A8FA3] flex-shrink-0" />
+                        </label>
+                        <div className="absolute bottom-full left-0 mb-1.5 z-20 w-56 bg-[#263746] text-white text-[11px] rounded-lg px-3 py-2.5 hidden group-hover:block shadow-xl pointer-events-none">
+                          {blueprint[key]
+                            ? blueprint[key]
+                            : <span className="italic text-white/50">Not filled in yet -- go to Career Blueprint to add this.</span>
+                          }
+                          <div className="absolute top-full left-4 border-4 border-transparent border-t-[#263746]" />
+                        </div>
                         <select
                           className={inputCls}
                           value={app.blueprintRatings?.[key] ?? ''}
