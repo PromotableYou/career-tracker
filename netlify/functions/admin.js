@@ -69,6 +69,7 @@ exports.handler = async (event) => {
       lastApp,
       lastCheckin,
       targetRole: d.profile?.targetRole || '',
+      coach: d.profile?.coach || '',
     }
   })
 
