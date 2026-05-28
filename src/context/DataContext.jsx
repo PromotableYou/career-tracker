@@ -36,6 +36,13 @@ export const DEFAULTS = {
   })),
 }
 
+function getEmailParam() {
+  // Support both ?email=foo@bar.com and the shorthand ?foo@bar.com format
+  const search = window.location.search.slice(1)
+  if (search.includes('@') && !search.includes('=')) return decodeURIComponent(search)
+  return new URLSearchParams(window.location.search).get('email') || null
+}
+
 function getUid() {
   const params = new URLSearchParams(window.location.search)
   const urlUid = params.get('uid')
@@ -43,11 +50,9 @@ function getUid() {
     localStorage.setItem('py-tracker-uid', urlUid)
     return urlUid
   }
+  // If an email is in the URL, ignore any cached uid so the email lookup runs fresh
+  if (getEmailParam()) return null
   return localStorage.getItem('py-tracker-uid') || null
-}
-
-function getEmailParam() {
-  return new URLSearchParams(window.location.search).get('email') || null
 }
 
 function mergeWithDefaults(saved) {
