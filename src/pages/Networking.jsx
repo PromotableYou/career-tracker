@@ -10,7 +10,7 @@ const inputCls = "w-full border border-[#D8E4EC] rounded-lg px-3 py-2 text-sm te
 const labelCls = "block text-xs font-semibold text-[#4A5C6B] mb-1"
 
 function newContact() {
-  return { id: Date.now(), person: '', role: '', contact: '', goal: '', area: '', type: '', depth: '', leverage: '', strategy: '', lastContact: '' }
+  return { id: Date.now(), person: '', role: '', contact: '', goal: '', area: '', type: '', depth: '', leverage: '', strategy: '', lastContact: '', touchpoints: [] }
 }
 
 const DEPTH_COLORS = {
@@ -34,6 +34,26 @@ export default function Networking() {
   function remove(id) { set(contacts.filter(c => c.id !== id)) }
   function upd(id, field, value) { set(contacts.map(c => c.id === id ? { ...c, [field]: value } : c)) }
   function toggle(id) { setExpanded(expanded === id ? null : id) }
+  function addTouchpoint(contactId) {
+    const today = new Date().toISOString().slice(0, 10)
+    const tp = { id: Date.now(), date: today, note: '' }
+    set(contacts.map(c => {
+      if (c.id !== contactId) return c
+      const touchpoints = [...(c.touchpoints || []), tp]
+      const lastContact = c.lastContact && c.lastContact >= today ? c.lastContact : today
+      return { ...c, touchpoints, lastContact }
+    }))
+  }
+  function updateTouchpoint(contactId, tpId, field, value) {
+    set(contacts.map(c => c.id !== contactId ? c : {
+      ...c, touchpoints: (c.touchpoints || []).map(tp => tp.id === tpId ? { ...tp, [field]: value } : tp)
+    }))
+  }
+  function removeTouchpoint(contactId, tpId) {
+    set(contacts.map(c => c.id !== contactId ? c : {
+      ...c, touchpoints: (c.touchpoints || []).filter(tp => tp.id !== tpId)
+    }))
+  }
 
   return (
     <div className="max-w-4xl">
@@ -142,6 +162,47 @@ export default function Networking() {
                     <label className={labelCls}>Strategy / Next Step</label>
                     <input className={inputCls} value={c.strategy} onChange={e => upd(c.id,'strategy',e.target.value)} placeholder="What's your next move with this person?" />
                   </div>
+                </div>
+
+                {/* Touchpoint history */}
+                <div className="mt-4 pt-4 border-t border-[#EEF3FA]">
+                  <div className="flex items-center justify-between mb-3">
+                    <label className={labelCls}>Contact History</label>
+                    <button
+                      onClick={() => addTouchpoint(c.id)}
+                      className="flex items-center gap-1 text-xs text-[#6D99F2] hover:text-[#263746] cursor-pointer font-medium transition-colors"
+                    >
+                      <Plus size={12} /> Log touchpoint
+                    </button>
+                  </div>
+                  {(c.touchpoints || []).length === 0 ? (
+                    <p className="text-xs text-[#7A8FA3] italic">No touchpoints logged yet. Use this to track every meaningful interaction.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {[...(c.touchpoints || [])].sort((a, b) => b.date.localeCompare(a.date)).map(tp => (
+                        <div key={tp.id} className="flex gap-3 items-center bg-[#F8F5F2] rounded-lg px-3 py-2">
+                          <input
+                            className="border border-[#D8E4EC] rounded px-2 py-1 text-xs bg-white focus:outline-none focus:ring-1 focus:ring-[#6D99F2]/40 flex-shrink-0"
+                            type="date"
+                            value={tp.date}
+                            onChange={e => updateTouchpoint(c.id, tp.id, 'date', e.target.value)}
+                          />
+                          <input
+                            className="flex-1 bg-transparent text-xs text-[#263746] focus:outline-none border-b border-dashed border-[#D8E4EC] focus:border-[#6D99F2] placeholder:text-[#7A8FA3]"
+                            value={tp.note}
+                            onChange={e => updateTouchpoint(c.id, tp.id, 'note', e.target.value)}
+                            placeholder="What happened? Next steps?"
+                          />
+                          <button
+                            onClick={() => removeTouchpoint(c.id, tp.id)}
+                            className="text-[#D8E4EC] hover:text-[#FF5E5B] transition-colors cursor-pointer flex-shrink-0"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             )}

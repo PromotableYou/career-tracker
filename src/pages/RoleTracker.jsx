@@ -75,6 +75,7 @@ export default function RoleTracker() {
   const [expanded, setExpanded] = useState(null)
   const apps = data.applications || []
   const resumeVersions = data.resumeVersions || []
+  const blueprint = data.blueprint || {}
 
   const resumeOptions = [
     { value: '', label: 'Select resume used' },
@@ -230,6 +231,9 @@ export default function RoleTracker() {
                     {BP_CATEGORIES.map(({ key, label }) => (
                       <div key={key}>
                         <label className="block text-[10px] font-medium text-[#4A5C6B] mb-1">{label}</label>
+                        {blueprint[key] && (
+                          <p className="text-[10px] text-[#7A8FA3] italic mb-1.5 line-clamp-2" title={blueprint[key]}>{blueprint[key]}</p>
+                        )}
                         <select
                           className={inputCls}
                           value={app.blueprintRatings?.[key] ?? ''}

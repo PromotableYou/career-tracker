@@ -4,7 +4,7 @@ import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
   LineChart, Line, XAxis, YAxis, CartesianGrid, BarChart, Bar
 } from 'recharts'
-import { Briefcase, Users, TrendingUp, Calendar, AlertCircle, CheckCircle, Clock, Target, Flame, Plus, Trophy } from 'lucide-react'
+import { Briefcase, Users, TrendingUp, Calendar, AlertCircle, CheckCircle, Clock, Target, Flame, Plus, Trophy, ClipboardList } from 'lucide-react'
 
 const COLORS = ['#263746','#6D99F2','#9999FF','#D4AF37','#FF5E5B','#FBD872','#344f66']
 
@@ -36,8 +36,11 @@ function getQuote() {
   return QUOTES[new Date().getDay() % QUOTES.length]
 }
 
-function daysSinceLastActivity(applications) {
-  const dates = applications.map(a => a.submittedDate).filter(Boolean).map(d => new Date(d))
+function daysSinceLastActivity(applications, networking) {
+  const dates = [
+    ...applications.map(a => a.submittedDate),
+    ...(networking || []).map(n => n.lastContact),
+  ].filter(Boolean).map(d => new Date(d))
   if (!dates.length) return null
   return Math.floor((Date.now() - Math.max(...dates)) / 86400000)
 }
@@ -132,6 +135,11 @@ function getStreak(applications, networking) {
   return streak
 }
 
+function getCheckinOverdue(weeklyCheckins) {
+  const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10)
+  return !(weeklyCheckins || []).some(c => c.submitted && c.weekOf && c.weekOf >= sevenDaysAgo)
+}
+
 function getOverdueFollowUps(applications) {
   const today = new Date().toISOString().slice(0, 10)
   return applications.filter(a =>
@@ -156,10 +164,11 @@ export default function Dashboard({ navigate }) {
   const interviews = applications.filter(a => a.interviewDate).length
   const convRate = totalApps ? ((interviews / totalApps) * 100).toFixed(1) : '0.0'
   const weeks = weeksActive(profile.startDate)
-  const days = daysSinceLastActivity(applications)
+  const days = daysSinceLastActivity(applications, networking)
   const appsWeek = appsThisWeek(applications)
   const networkingWeek = networking.filter(n => n.lastContact && new Date(n.lastContact) >= Date.now() - 7 * 86400000).length
   const status = getStatus(days, appsWeek, profile.weeklyAppTarget || 5)
+  const checkinOverdue = getCheckinOverdue(weeklyCheckins)
 
   const roleMap = {}
   applications.forEach(a => { if (a.jobRole) roleMap[a.jobRole] = (roleMap[a.jobRole] || 0) + 1 })
@@ -231,6 +240,23 @@ export default function Dashboard({ navigate }) {
           </span>
         )}
       </div>
+
+      {/* Check-in reminder */}
+      {checkinOverdue && (
+        <div className="flex items-center gap-3 p-4 rounded-xl mb-6 bg-[#FBD872]/20 border border-[#FBD872]/40">
+          <ClipboardList size={18} className="text-amber-600 flex-shrink-0" />
+          <div className="flex-1">
+            <span className="font-medium text-sm text-amber-800">Weekly check-in due</span>
+            <span className="text-sm text-amber-700 ml-2">Keep the habit going -- fill in this week's reflection.</span>
+          </div>
+          <button
+            onClick={() => navigate('checkin')}
+            className="text-xs font-medium text-amber-800 bg-white border border-[#FBD872]/60 px-3 py-1.5 rounded-lg hover:bg-[#FBD872]/20 cursor-pointer transition-colors flex-shrink-0"
+          >
+            Go to check-in
+          </button>
+        </div>
+      )}
 
       {/* KPI cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
