@@ -14,10 +14,30 @@ const PLACEHOLDERS = [
   'e.g. Target $100K. Fair compensation. Clear progression.',
 ]
 const CATEGORY_KEYS = ['company','culture','team','manager','tasks','values','environment','salary']
+const MAX_SCORE = CATEGORY_KEYS.length * 5
 
 const inputCls = "w-full border border-[#D8E4EC] rounded-lg px-3 py-2 text-sm text-[#263746] focus:outline-none focus:ring-2 focus:ring-[#6D99F2]/40 bg-white placeholder:text-[#7A8FA3]"
 
-function downloadPDF(bp, profileName) {
+function appTotal(app) {
+  return CATEGORY_KEYS.reduce((s, k) => s + (parseInt(app.blueprintRatings?.[k]) || 0), 0)
+}
+
+function fitVerdict(total) {
+  const pct = total / MAX_SCORE
+  if (pct >= 0.7) return { label: 'Strong fit', color: 'text-emerald-600' }
+  if (pct >= 0.4) return { label: 'Partial fit', color: 'text-amber-600' }
+  if (total > 0)  return { label: 'Weak fit',    color: 'text-[#FF5E5B]' }
+  return { label: '', color: '' }
+}
+
+function scoreColor(val) {
+  if (!val || val === 0) return ''
+  if (val >= 4) return 'bg-emerald-50 text-emerald-700'
+  if (val === 3) return 'bg-amber-50 text-amber-700'
+  return 'bg-red-50 text-[#FF5E5B]'
+}
+
+function downloadPDF(bp, profileName, ratedApps) {
   const doc = new jsPDF()
   const lm = 20
   const pageW = doc.internal.pageSize.getWidth()
@@ -54,15 +74,11 @@ function downloadPDF(bp, profileName) {
     const value = bp[CATEGORY_KEYS[i]]
     if (!value) return
     checkPage(24)
-
-    // Category label
     doc.setFont('helvetica', 'bold')
     doc.setFontSize(10)
     doc.setTextColor(38, 55, 70)
     doc.text(cat, lm, y)
     y += 5
-
-    // Value text
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(10)
     doc.setTextColor(74, 92, 107)
@@ -70,8 +86,6 @@ function downloadPDF(bp, profileName) {
     checkPage(lines.length * 5 + 4)
     doc.text(lines, lm, y)
     y += lines.length * 5 + 7
-
-    // Divider
     doc.setDrawColor(216, 228, 236)
     doc.line(lm, y - 3, pageW - lm, y - 3)
   })
@@ -93,60 +107,55 @@ function downloadPDF(bp, profileName) {
     y += lines.length * 5 + 10
   }
 
-  // Role scores table
-  const scoredRoles = (bp.roleScores || []).filter(r => r?.name)
-  if (scoredRoles.length > 0) {
-    checkPage(40)
+  // Role alignment table from applications
+  if (ratedApps.length > 0) {
     doc.addPage()
     y = lm
-
     doc.setFillColor(38, 55, 70)
     doc.rect(0, 0, pageW, 18, 'F')
     doc.setFont('helvetica', 'bold')
     doc.setFontSize(13)
     doc.setTextColor(255, 255, 255)
-    doc.text('Role Scores', lm, 12)
+    doc.text('Role Alignment', lm, 12)
     y = 28
 
-    // Table header
-    const colW = Math.min(32, (contentW - 48) / scoredRoles.length)
+    const colW = Math.min(32, (contentW - 48) / ratedApps.length)
     doc.setFont('helvetica', 'bold')
     doc.setFontSize(8)
     doc.setTextColor(74, 92, 107)
     doc.text('Category', lm, y)
-    scoredRoles.forEach((r, i) => {
-      doc.text(r.name.substring(0, 14), lm + 48 + i * colW, y, { maxWidth: colW - 2 })
+    ratedApps.forEach((app, i) => {
+      const header = (app.jobRole || 'Untitled').substring(0, 14)
+      doc.text(header, lm + 48 + i * colW, y, { maxWidth: colW - 2 })
     })
     y += 5
     doc.setDrawColor(216, 228, 236)
     doc.line(lm, y, pageW - lm, y)
     y += 4
 
-    // Rows
     CATEGORIES.forEach((cat, ci) => {
       checkPage(8)
       doc.setFont('helvetica', 'normal')
       doc.setFontSize(8)
       doc.setTextColor(74, 92, 107)
       doc.text(cat, lm, y)
-      scoredRoles.forEach((r, i) => {
-        const val = r.scores?.[CATEGORY_KEYS[ci]] ?? ''
-        doc.text(val === '' ? '-' : String(val), lm + 48 + i * colW + colW / 2, y, { align: 'center' })
+      ratedApps.forEach((app, i) => {
+        const val = parseInt(app.blueprintRatings?.[CATEGORY_KEYS[ci]]) || 0
+        doc.text(val > 0 ? String(val) : '-', lm + 48 + i * colW + colW / 2, y, { align: 'center' })
       })
       y += 6
     })
 
-    // Totals row
     y += 2
     doc.setDrawColor(38, 55, 70)
     doc.line(lm, y - 2, pageW - lm, y - 2)
     doc.setFont('helvetica', 'bold')
     doc.setFontSize(8)
     doc.setTextColor(38, 55, 70)
-    doc.text('TOTAL / 8', lm, y + 4)
-    scoredRoles.forEach((r, i) => {
-      const total = CATEGORY_KEYS.reduce((s, k) => s + (parseFloat(r.scores?.[k]) || 0), 0)
-      doc.text(total.toFixed(1), lm + 48 + i * colW + colW / 2, y + 4, { align: 'center' })
+    doc.text(`TOTAL / ${MAX_SCORE}`, lm, y + 4)
+    ratedApps.forEach((app, i) => {
+      const total = appTotal(app)
+      doc.text(String(total), lm + 48 + i * colW + colW / 2, y + 4, { align: 'center' })
     })
   }
 
@@ -156,38 +165,22 @@ function downloadPDF(bp, profileName) {
 export default function Blueprint() {
   const { data, updateNested } = useData()
   const bp = data.blueprint
+  const applications = data.applications || []
+  const ratedApps = applications.filter(a =>
+    a.blueprintRatings && Object.values(a.blueprintRatings).some(v => v)
+  )
 
   function set(field, value) { updateNested('blueprint', field, value) }
-
-  function updateScore(ri, catKey, value) {
-    const scores = [...(bp.roleScores || [])]
-    if (!scores[ri]) scores[ri] = { name: '', scores: {} }
-    scores[ri] = { ...scores[ri], scores: { ...scores[ri].scores, [catKey]: value } }
-    set('roleScores', scores)
-  }
-
-  function updateRoleName(ri, name) {
-    const scores = [...(bp.roleScores || [])]
-    if (!scores[ri]) scores[ri] = { name: '', scores: {} }
-    scores[ri] = { ...scores[ri], name }
-    set('roleScores', scores)
-  }
-
-  const roles = bp.roleScores?.length > 0 ? bp.roleScores : Array(5).fill(null).map(() => ({ name: '', scores: {} }))
-
-  function getTotal(ri) {
-    return CATEGORY_KEYS.reduce((sum, k) => sum + (parseFloat(roles[ri]?.scores?.[k]) || 0), 0)
-  }
 
   return (
     <div className="max-w-4xl">
       <div className="flex items-start justify-between mb-6">
         <div>
           <h2 className="text-2xl font-bold text-[#263746] mb-1 font-['Inter']">Career Blueprint</h2>
-          <p className="text-sm text-[#5A7080] italic font-['Playfair_Display']">Your clarity document. Paste your GPT responses, then score every role before you apply.</p>
+          <p className="text-sm text-[#5A7080] italic font-['Playfair_Display']">Your clarity document. Paste your GPT responses, then rate every role in the Role Tracker.</p>
         </div>
         <button
-          onClick={() => downloadPDF(bp, data.profile?.name)}
+          onClick={() => downloadPDF(bp, data.profile?.name, ratedApps)}
           className="flex items-center gap-2 bg-[#EEF3FA] hover:bg-[#D0DFF8] text-[#263746] text-sm font-medium px-4 py-2 rounded-lg transition-colors cursor-pointer border border-[#D8E4EC] flex-shrink-0 mt-1"
         >
           <Download size={15} /> Download PDF
@@ -223,67 +216,67 @@ export default function Blueprint() {
         </div>
       </div>
 
+      {/* Live role alignment from Role Tracker */}
       <div className="bg-white rounded-xl border border-[#D8E4EC] p-6 overflow-x-auto">
-        <h3 className="font-semibold text-[#263746] mb-1 font-['Inter']">Score Roles Against Your Blueprint</h3>
-        <p className="text-sm text-[#7A8FA3] mb-4">1 = strong match &nbsp;·&nbsp; 0.5 = partial &nbsp;·&nbsp; 0 = no match</p>
+        <h3 className="font-semibold text-[#263746] mb-1 font-['Inter']">Role Alignment</h3>
+        <p className="text-sm text-[#7A8FA3] mb-4">Pulled automatically from your rated applications in the Role Tracker. Rate 1–5 per category on each application to see it here.</p>
 
-        <table className="w-full text-sm">
-          <thead>
-            <tr>
-              <th className="text-left text-xs font-semibold text-[#4A5C6B] py-2 pr-4 w-40">Category</th>
-              {roles.map((role, i) => (
-                <th key={i} className="text-center py-2 px-2 min-w-[120px]">
-                  <input
-                    className="w-full border border-[#D8E4EC] rounded px-2 py-1 text-xs text-center focus:outline-none focus:ring-1 focus:ring-[#6D99F2]/40 placeholder:text-[#7A8FA3]"
-                    value={role?.name || ''}
-                    onChange={e => updateRoleName(i, e.target.value)}
-                    placeholder={`Role ${i + 1}`}
-                  />
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {CATEGORIES.map((cat, ci) => (
-              <tr key={cat} className="border-t border-[#EEF3FA]">
-                <td className="text-xs text-[#4A5C6B] py-2 pr-4">{cat}</td>
-                {roles.map((role, ri) => (
-                  <td key={ri} className="text-center py-2 px-2">
-                    <select
-                      className="border border-[#D8E4EC] rounded px-2 py-1 text-xs text-center focus:outline-none focus:ring-1 focus:ring-[#6D99F2]/40 bg-white text-[#263746]"
-                      value={role?.scores?.[CATEGORY_KEYS[ci]] ?? ''}
-                      onChange={e => updateScore(ri, CATEGORY_KEYS[ci], e.target.value)}
-                    >
-                      <option value="">-</option>
-                      <option value="0">0</option>
-                      <option value="0.5">0.5</option>
-                      <option value="1">1</option>
-                    </select>
-                  </td>
+        {ratedApps.length === 0 ? (
+          <div className="py-10 text-center">
+            <p className="text-sm text-[#7A8FA3]">No rated applications yet.</p>
+            <p className="text-xs text-[#7A8FA3] mt-1">Open an application in the Role Tracker and rate each blueprint category to see the comparison here.</p>
+          </div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr>
+                <th className="text-left text-xs font-semibold text-[#4A5C6B] py-2 pr-4 w-40">Category</th>
+                {ratedApps.map(app => (
+                  <th key={app.id} className="text-center py-2 px-2 min-w-[120px]">
+                    <p className="text-xs font-semibold text-[#263746] truncate max-w-[110px] mx-auto">{app.jobRole || 'Untitled'}</p>
+                    {app.company && <p className="text-[10px] text-[#7A8FA3] truncate max-w-[110px] mx-auto">{app.company}</p>}
+                  </th>
                 ))}
               </tr>
-            ))}
-            <tr className="border-t-2 border-[#D8E4EC] font-semibold">
-              <td className="text-xs text-[#263746] py-3 pr-4">TOTAL (out of 8)</td>
-              {roles.map((_, ri) => (
-                <td key={ri} className="text-center py-3 px-2">
-                  <span className={`text-sm font-bold ${getTotal(ri) >= 6 ? 'text-emerald-600' : getTotal(ri) >= 4 ? 'text-amber-600' : 'text-[#FF5E5B]'}`}>
-                    {getTotal(ri).toFixed(1)}
-                  </span>
-                </td>
+            </thead>
+            <tbody>
+              {CATEGORY_KEYS.map((key, ci) => (
+                <tr key={key} className="border-t border-[#EEF3FA]">
+                  <td className="text-xs text-[#4A5C6B] py-2 pr-4">{CATEGORIES[ci]}</td>
+                  {ratedApps.map(app => {
+                    const val = parseInt(app.blueprintRatings?.[key]) || 0
+                    return (
+                      <td key={app.id} className="text-center py-2 px-2">
+                        <span className={`inline-flex items-center justify-center w-8 h-6 rounded text-xs font-semibold ${scoreColor(val)}`}>
+                          {val > 0 ? val : <span className="text-[#D8E4EC]">-</span>}
+                        </span>
+                      </td>
+                    )
+                  })}
+                </tr>
               ))}
-            </tr>
-            <tr className="border-t border-[#EEF3FA]">
-              <td className="text-xs text-[#4A5C6B] py-2 pr-4">Verdict</td>
-              {roles.map((_, ri) => {
-                const t = getTotal(ri)
-                const verdict = t >= 6 ? 'Strong fit' : t >= 4 ? 'Partial fit' : t > 0 ? 'Weak fit' : ''
-                const color = t >= 6 ? 'text-emerald-600' : t >= 4 ? 'text-amber-600' : 'text-[#FF5E5B]'
-                return <td key={ri} className={`text-center text-xs py-2 px-2 font-medium ${color}`}>{verdict}</td>
-              })}
-            </tr>
-          </tbody>
-        </table>
+              <tr className="border-t-2 border-[#D8E4EC]">
+                <td className="text-xs font-semibold text-[#263746] py-3 pr-4">TOTAL (out of {MAX_SCORE})</td>
+                {ratedApps.map(app => {
+                  const total = appTotal(app)
+                  const { color } = fitVerdict(total)
+                  return (
+                    <td key={app.id} className="text-center py-3 px-2">
+                      <span className={`text-sm font-bold ${color}`}>{total}</span>
+                    </td>
+                  )
+                })}
+              </tr>
+              <tr className="border-t border-[#EEF3FA]">
+                <td className="text-xs text-[#4A5C6B] py-2 pr-4">Verdict</td>
+                {ratedApps.map(app => {
+                  const { label, color } = fitVerdict(appTotal(app))
+                  return <td key={app.id} className={`text-center text-xs py-2 px-2 font-medium ${color}`}>{label}</td>
+                })}
+              </tr>
+            </tbody>
+          </table>
+        )}
       </div>
     </div>
   )
