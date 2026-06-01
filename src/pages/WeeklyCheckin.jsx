@@ -1,20 +1,5 @@
 import { useData } from '../context/DataContext'
-import { CheckCircle2, Circle, BookOpen } from 'lucide-react'
-
-const MODULE_SUGGESTIONS = {
-  1: { module: 'Your First 3 Steps', tip: 'Have you watched the Welcome video and read the Winning Applicants Formula? Do this before anything else.' },
-  2: { module: 'Career Blueprint Builder', tip: "By week 2 your Career Blueprint should be complete. It's the foundation everything else is built on." },
-  3: { module: 'Get Role Clarity', tip: 'Have you completed the Get Role Clarity module? Make sure you\'re targeting the right roles before ramping up applications.' },
-  4: { module: 'Creating your UVP', tip: 'Week 4 — time to lock in your Unique Value Proposition. This should be in every application and message you send.' },
-  5: { module: 'Expert Resume Writing', tip: 'Is your resume doing the heavy lifting? Revisit the Expert Resume Writing module if you\'re not getting callbacks.' },
-  6: { module: 'Genius Tools (AI)', tip: 'Are you using AI to speed up your applications? The Genius Tools module shows you how to use the Resume and Cover Letter GPTs.' },
-  7: { module: 'Leveraging LinkedIn', tip: 'Half way through — how\'s your LinkedIn looking? Now is a great time to work through the Leveraging LinkedIn module.' },
-  8: { module: 'Know Your Worth', tip: 'As you get closer to offers, make sure you\'ve done the Salary Clarity module so you\'re ready to negotiate.' },
-  9: { module: 'Mastering Interviews', tip: 'Week 9 — if you have interviews coming up, make sure you\'ve completed the full Mastering Interviews module.' },
-  10: { module: 'Influential Interviews', tip: 'Brush up on behavioural questions and how to give a strong career overview — the Influential Interviews module.' },
-  11: { module: 'Navigating the Redundancy Process', tip: 'If you\'re feeling stretched or stressed, check out the Staying Calm in High Pressure Environments bonus lesson.' },
-  12: { module: 'Take The Right Steps', tip: 'Final week! Watch the Take The Right Steps bonus to make sure you\'re considering all angles before accepting an offer.' },
-}
+import { CheckCircle2, Circle } from 'lucide-react'
 
 const inputCls = "w-full border border-[#D8E4EC] rounded-lg px-2 py-1.5 text-xs text-[#263746] focus:outline-none focus:ring-2 focus:ring-[#6D99F2]/40 bg-white placeholder:text-[#7A8FA3]"
 
@@ -112,16 +97,6 @@ export default function WeeklyCheckin() {
                 </div>
               </div>
 
-              {/* Module suggestion for this week */}
-              {MODULE_SUGGESTIONS[c.id] && (
-                <div className="mt-4 pt-4 border-t border-[#EEF3FA] flex items-start gap-3 bg-[#EEF3FA] -mx-5 -mb-4 px-5 py-3 rounded-b-xl">
-                  <BookOpen size={15} className="text-[#6D99F2] flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-xs font-bold text-[#263746] mb-0.5">📚 This week: {MODULE_SUGGESTIONS[c.id].module}</p>
-                    <p className="text-xs text-[#4A5C6B]">{MODULE_SUGGESTIONS[c.id].tip}</p>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         ))}
