@@ -31,11 +31,7 @@ export const DEFAULTS = {
   salary: [],
   offers: [],
   coaching: [],
-  weeklyCheckins: Array.from({ length: 12 }, (_, i) => ({
-    id: i + 1, weekOf: '', appsSubmitted: 0, networkingActions: 0,
-    interviewsScheduled: 0, wentWell: '', didntWork: '', feeling: '',
-    focusNextWeek: '', energyLevel: '', submitted: false,
-  })),
+  weeklyCheckins: [],
 }
 
 function getEmailParam() {
