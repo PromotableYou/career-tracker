@@ -5,9 +5,9 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, BarChart, Bar
 } from 'recharts'
 import {
-  Briefcase, Users, TrendingUp, Calendar, AlertCircle,
-  CheckCircle, Clock, Target, Flame, Plus, Trophy, ClipboardList,
-  Lightbulb, CalendarCheck, ChevronRight
+  Briefcase, Users, TrendingUp, AlertCircle,
+  CheckCircle, Clock, Target, Plus, Trophy, ClipboardList,
+  Lightbulb, CalendarCheck, ArrowRight
 } from 'lucide-react'
 
 const COLORS = ['#263746', '#6D99F2', '#9999FF', '#D4AF37', '#FF5E5B', '#FBD872', '#344f66']
@@ -36,9 +36,7 @@ const BP_CATEGORIES = [
   { key: 'salary', label: 'Salary' },
 ]
 
-function getQuote() {
-  return QUOTES[new Date().getDay() % QUOTES.length]
-}
+function getQuote() { return QUOTES[new Date().getDay() % QUOTES.length] }
 
 function daysSinceLastActivity(applications, networking, weeklyCheckins, coaching) {
   const dates = [
@@ -54,10 +52,10 @@ function daysSinceLastActivity(applications, networking, weeklyCheckins, coachin
 }
 
 function getStatus(days, appsThisWeek, target) {
-  if (days === null) return { label: 'No activity yet', color: 'text-[#7A8FA3]', icon: Clock, variant: 'neutral' }
-  if (days >= 7) return { label: 'No activity in 7+ days', color: 'text-[#FF5E5B]', icon: AlertCircle, variant: 'red' }
-  if (appsThisWeek < target) return { label: 'Below weekly target', color: 'text-amber-600', icon: AlertCircle, variant: 'amber' }
-  return { label: 'On track', color: 'text-emerald-500', icon: CheckCircle, variant: 'green' }
+  if (days === null) return { label: 'No activity yet', icon: Clock, variant: 'neutral' }
+  if (days >= 7) return { label: 'No activity in 7+ days', icon: AlertCircle, variant: 'red' }
+  if (appsThisWeek < target) return { label: 'Below weekly target', icon: AlertCircle, variant: 'amber' }
+  return { label: 'On track', icon: CheckCircle, variant: 'green' }
 }
 
 function weeksActive(startDate) {
@@ -81,8 +79,7 @@ function getApplicationsOverTime(applications) {
     const key = weekStart.toISOString().slice(0, 10)
     byWeek[key] = (byWeek[key] || 0) + 1
   })
-  return Object.entries(byWeek)
-    .sort(([a], [b]) => a.localeCompare(b))
+  return Object.entries(byWeek).sort(([a], [b]) => a.localeCompare(b))
     .map(([date, count]) => ({
       week: new Date(date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }),
       apps: count,
@@ -92,21 +89,14 @@ function getApplicationsOverTime(applications) {
 function getRoleFitScore(applications) {
   const rated = applications.filter(a => a.blueprintRatings && Object.keys(a.blueprintRatings).length > 0)
   if (!rated.length) return null
-  const catTotals = {}
-  const catCounts = {}
+  const catTotals = {}, catCounts = {}
   rated.forEach(a => {
     BP_CATEGORIES.forEach(({ key }) => {
       const val = parseInt(a.blueprintRatings[key]) || 0
-      if (val > 0) {
-        catTotals[key] = (catTotals[key] || 0) + val
-        catCounts[key] = (catCounts[key] || 0) + 1
-      }
+      if (val > 0) { catTotals[key] = (catTotals[key] || 0) + val; catCounts[key] = (catCounts[key] || 0) + 1 }
     })
   })
-  const catAverages = BP_CATEGORIES.map(({ key, label }) => ({
-    label,
-    avg: catCounts[key] ? catTotals[key] / catCounts[key] : 0,
-  })).filter(c => c.avg > 0)
+  const catAverages = BP_CATEGORIES.map(({ key, label }) => ({ label, avg: catCounts[key] ? catTotals[key] / catCounts[key] : 0 })).filter(c => c.avg > 0)
   if (!catAverages.length) return null
   const overallAvg = catAverages.reduce((s, c) => s + c.avg, 0) / catAverages.length
   const pct = (overallAvg / 5) * 100
@@ -126,8 +116,7 @@ function getStreak(applications, networking) {
   let streak = 0
   const today = new Date()
   for (let i = 0; i <= 365; i++) {
-    const d = new Date(today)
-    d.setDate(today.getDate() - i)
+    const d = new Date(today); d.setDate(today.getDate() - i)
     const key = d.toISOString().slice(0, 10)
     if (activityDates.has(key)) streak++
     else if (i > 0) break
@@ -153,27 +142,18 @@ function getModulePrompts(applications, weeks) {
   const totalApps = applications.length
   const hasInterview = applications.some(a => a.interviewDate)
   const hasOffer = applications.some(a => a.status === 'Offer Received')
-  if (totalApps >= 5 && !hasInterview) {
-    prompts.push({ icon: '🎤', module: 'Module 5 — Mastering Interviews', message: `You've submitted ${totalApps} applications — are you interview-ready?`, urgency: 'amber' })
-  }
-  if (hasInterview && !hasOffer) {
-    prompts.push({ icon: '🏆', module: 'Influential Interviews', message: 'Interview coming up — brush up on behavioural questions and your career overview.', urgency: 'blue' })
-  }
-  if (totalApps >= 10) {
-    prompts.push({ icon: '🧭', module: 'Career Blueprint Builder', message: `${totalApps} applications in — are you targeting the right roles?`, urgency: 'navy' })
-  }
-  if (weeks >= 3 && totalApps < 3) {
-    prompts.push({ icon: '🚀', module: 'Winning Applicants Formula', message: "A few weeks in but applications are low — revisit your momentum strategy.", urgency: 'amber' })
-  }
+  if (totalApps >= 5 && !hasInterview) prompts.push({ icon: '🎤', module: 'Mastering Interviews', message: `${totalApps} applications in — are you interview-ready?`, urgency: 'amber' })
+  if (hasInterview && !hasOffer) prompts.push({ icon: '🏆', module: 'Influential Interviews', message: 'Interview coming up — brush up on behavioural questions and your career overview.', urgency: 'blue' })
+  if (totalApps >= 10) prompts.push({ icon: '🧭', module: 'Career Blueprint Builder', message: `${totalApps} applications in — are you still targeting the right roles?`, urgency: 'navy' })
+  if (weeks >= 3 && totalApps < 3) prompts.push({ icon: '🚀', module: 'Winning Applicants Formula', message: 'A few weeks in but applications are low — revisit your momentum strategy.', urgency: 'amber' })
   return prompts
 }
 
-function getPipelineData(applications) {
-  const stages = ['Applied', 'Awaiting Response', 'Interview Scheduled', 'Offer Received']
-  return stages.map(stage => ({
-    stage: stage.replace(' ', '\n'),
-    count: applications.filter(a => a.status === stage).length,
-  }))
+const STATUS_STYLES = {
+  green:   { pill: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' },
+  amber:   { pill: 'bg-amber-50 text-amber-700 border-amber-200', dot: 'bg-amber-400' },
+  red:     { pill: 'bg-red-50 text-red-700 border-red-200', dot: 'bg-red-400' },
+  neutral: { pill: 'bg-[#F5F9FD] text-[#7A8FA3] border-[#D8E4EC]', dot: 'bg-[#B8CAD8]' },
 }
 
 export default function Dashboard({ navigate }) {
@@ -181,6 +161,7 @@ export default function Dashboard({ navigate }) {
   const { profile, applications, networking, weeklyCheckins } = data
   const [editingTarget, setEditingTarget] = React.useState(null)
   const [targetDraft, setTargetDraft] = React.useState('')
+  const [newWin, setNewWin] = React.useState('')
 
   const totalApps = applications.length
   const interviews = applications.filter(a => a.interviewDate).length
@@ -191,23 +172,20 @@ export default function Dashboard({ navigate }) {
   const networkingWeek = networking.filter(n => n.lastContact && new Date(n.lastContact) >= Date.now() - 7 * 86400000).length
   const status = getStatus(days, appsWeek, profile.weeklyAppTarget || 5)
   const checkinOverdue = getCheckinOverdue(weeklyCheckins)
+  const streak = getStreak(applications, networking)
+  const overdueFollowUps = getOverdueFollowUps(applications)
+  const modulePrompts = getModulePrompts(applications, weeks)
+  const wins = data.wins || []
+  const appOverTime = getApplicationsOverTime(applications)
+  const roleFit = getRoleFitScore(applications)
 
   const roleMap = {}
   applications.forEach(a => { if (a.jobRole) roleMap[a.jobRole] = (roleMap[a.jobRole] || 0) + 1 })
   const pieData = Object.entries(roleMap).map(([name, value]) => ({ name, value }))
 
-  const firstApp = applications.length > 0
-  const firstInterview = applications.some(a => a.interviewDate)
-  const firstOffer = data.offers?.length > 0
-
-  const appOverTime = getApplicationsOverTime(applications)
-  const roleFit = getRoleFitScore(applications)
-  const pipeline = getPipelineData(applications)
-  const streak = getStreak(applications, networking)
-  const overdueFollowUps = getOverdueFollowUps(applications)
-  const modulePrompts = getModulePrompts(applications, weeks)
-  const wins = data.wins || []
-  const [newWin, setNewWin] = React.useState('')
+  const fitColor = roleFit?.color === 'emerald' ? '#10b981' : roleFit?.color === 'amber' ? '#f59e0b' : '#FF5E5B'
+  const fitBg = roleFit?.color === 'emerald' ? 'bg-emerald-50' : roleFit?.color === 'amber' ? 'bg-amber-50' : 'bg-red-50'
+  const fitText = roleFit?.color === 'emerald' ? 'text-emerald-600' : roleFit?.color === 'amber' ? 'text-amber-600' : 'text-red-500'
 
   function addWin(e) {
     e.preventDefault()
@@ -220,230 +198,182 @@ export default function Dashboard({ navigate }) {
     update('applications', applications.map(a => a.id === id ? { ...a, followUpDone: true } : a))
   }
 
-  const fitColor = roleFit?.color === 'emerald' ? '#10b981' : roleFit?.color === 'amber' ? '#f59e0b' : '#FF5E5B'
-  const fitBg = roleFit?.color === 'emerald' ? 'bg-emerald-50' : roleFit?.color === 'amber' ? 'bg-amber-50' : 'bg-red-50'
-  const fitText = roleFit?.color === 'emerald' ? 'text-emerald-600' : roleFit?.color === 'amber' ? 'text-amber-600' : 'text-red-500'
-  const fitVerdict = roleFit?.pct >= 70 ? 'Strong alignment' : roleFit?.pct >= 40 ? 'Moderate alignment' : 'Low alignment'
-
-  const statusVariantClasses = {
-    green: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
-    amber: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
-    red: 'bg-red-500/20 text-red-300 border-red-500/30',
-    neutral: 'bg-white/15 text-white/70 border-white/20',
-  }
+  const s = STATUS_STYLES[status.variant]
 
   return (
     <div className="max-w-5xl">
 
-      {/* ── HERO ── */}
-      <div className="rounded-2xl bg-gradient-to-br from-[#1c2f3e] via-[#263746] to-[#1e3d55] p-7 mb-6 relative overflow-hidden">
-        {/* Decorative blobs */}
-        <div className="absolute -top-16 -right-16 w-64 h-64 bg-[#6D99F2]/15 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-12 left-1/4 w-48 h-48 bg-[#D4AF37]/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute top-1/2 right-1/4 w-32 h-32 bg-[#6D99F2]/10 rounded-full blur-2xl pointer-events-none" />
-
-        <div className="relative">
-          <div className="flex items-start justify-between mb-5">
-            <div>
-              {weeks > 0 && (
-                <div className="inline-flex items-center gap-1.5 bg-white/10 text-white/80 text-xs font-medium px-3 py-1.5 rounded-full mb-3 border border-white/10">
-                  <Calendar size={11} />
-                  Week {weeks} of your search
-                </div>
-              )}
-              <h1 className="text-3xl font-bold text-white mb-1.5 font-['Inter']">
-                {profile.name ? `Hey ${profile.name.split(' ')[0]} 👋` : 'Welcome back 👋'}
-              </h1>
-              <p className="text-white/55 text-sm italic font-['Playfair_Display'] max-w-lg">"{getQuote()}"</p>
-            </div>
-            <div className={`hidden sm:flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border flex-shrink-0 ${statusVariantClasses[status.variant]}`}>
-              <status.icon size={12} />
-              {status.label}
-            </div>
-          </div>
-
-          {/* Stat tiles */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {[
-              { label: 'Total applications', value: totalApps, icon: '📋', sub: 'all time' },
-              { label: 'Interviews secured', value: interviews, icon: '🎤', sub: `${convRate}% conversion` },
-              { label: 'Day streak', value: streak, icon: '🔥', sub: streak > 0 ? 'keep it going!' : 'start today' },
-              {
-                label: 'Weeks active', value: weeks, icon: '📅',
-                sub: profile.startDate
-                  ? `since ${new Date(profile.startDate).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}`
-                  : 'set your start date'
-              },
-            ].map(({ label, value, icon, sub }) => (
-              <div key={label} className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/10 hover:bg-white/15 transition-colors">
-                <div className="text-xl mb-2">{icon}</div>
-                <div className="text-2xl font-bold text-white font-['Inter'] leading-none mb-1">{value}</div>
-                <div className="text-xs font-semibold text-white/80 leading-tight">{label}</div>
-                <div className="text-xs text-white/40 mt-0.5">{sub}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* ── QUICK ACTIONS ── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        {[
-          { label: 'Log application', sub: 'Role Tracker', page: 'roles', icon: Briefcase, bg: 'from-[#1c2f3e] to-[#263746]', accent: '#6D99F2' },
-          { label: 'Add networking', sub: 'Networking', page: 'networking', icon: Users, bg: 'from-[#14352a] to-[#1e4d3c]', accent: '#4ade80' },
-          { label: 'Friday check-in', sub: 'Weekly Check-In', page: 'checkin', icon: ClipboardList, bg: 'from-[#3d2c10] to-[#563d18]', accent: '#FBD872' },
-          { label: 'Log coaching', sub: 'Coaching Sessions', page: 'coaching', icon: CalendarCheck, bg: 'from-[#251840] to-[#362558]', accent: '#c084fc' },
-        ].map(({ label, sub, page, icon: Icon, bg, accent }) => (
-          <button
-            key={label}
-            onClick={() => navigate(page)}
-            className={`bg-gradient-to-br ${bg} hover:opacity-90 active:scale-[0.98] rounded-xl p-4 text-left cursor-pointer transition-all border border-white/10 group`}
-          >
-            <Icon size={20} className="mb-3 flex-shrink-0" style={{ color: accent }} />
-            <p className="text-white text-sm font-semibold leading-tight">{label}</p>
-            <p className="text-white/40 text-xs mt-0.5 flex items-center gap-0.5 group-hover:text-white/60 transition-colors">
-              {sub} <ChevronRight size={10} />
-            </p>
-          </button>
-        ))}
-      </div>
-
-      {/* ── YOUR WEEK ── */}
-      <div className="bg-white rounded-2xl border border-[#D8E4EC] p-6 mb-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-lg font-bold text-[#263746] font-['Inter']">Your week at a glance</h2>
-            <p className="text-xs text-[#7A8FA3] mt-0.5">
-              w/e {new Date().toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })}
-              {days !== null && <span className="ml-3">{days === 0 ? '· Active today ✓' : `· Last active ${days}d ago`}</span>}
-            </p>
-          </div>
-          {streak > 0 && (
-            <div className="flex items-center gap-2 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2">
-              <span className="text-xl">🔥</span>
-              <div>
-                <div className="text-lg font-bold text-[#263746] font-['Inter'] leading-none">{streak}</div>
-                <div className="text-xs text-amber-700">day streak</div>
-              </div>
-            </div>
+      {/* ── GREETING ─────────────────────────────────────────── */}
+      <div className="mb-8">
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          {weeks > 0 && (
+            <span className="inline-flex items-center gap-1.5 bg-[#263746] text-white text-xs font-semibold px-3 py-1.5 rounded-full">
+              Week {weeks} of your search
+            </span>
           )}
+          <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border ${s.pill}`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
+            {status.label}
+            {days !== null && <span className="opacity-60">· {days === 0 ? 'active today' : `${days}d ago`}</span>}
+          </span>
         </div>
 
-        <div className="grid sm:grid-cols-2 gap-8">
-          {/* Apps */}
-          <div>
-            <div className="flex items-baseline justify-between mb-3">
-              <div className="flex items-baseline gap-2">
-                <span className="text-5xl font-bold text-[#263746] font-['Inter'] leading-none">{appsWeek}</span>
-                <span className="text-xl text-[#B8CAD8] font-['Inter']">/{profile.weeklyAppTarget || 5}</span>
+        <h1 className="text-5xl font-black text-[#1a2b38] font-['Inter'] leading-[1.1] mb-3 tracking-tight">
+          {profile.name ? `Hey ${profile.name.split(' ')[0]} 👋` : 'Welcome back 👋'}
+        </h1>
+        <p className="text-lg text-[#8FA3B3] italic font-['Playfair_Display']">"{getQuote()}"</p>
+      </div>
+
+      {/* ── YOUR WEEK ─────────────────────────────────────────── */}
+      <div className="bg-white rounded-3xl border border-[#E4EDF5] mb-6 overflow-hidden">
+        <div className="px-8 pt-7 pb-6 border-b border-[#F0F5FA]">
+          <div className="flex items-baseline justify-between mb-7">
+            <div>
+              <h2 className="text-2xl font-black text-[#1a2b38] font-['Inter']">Your week at a glance</h2>
+              <p className="text-sm text-[#A8BCC8] mt-0.5">
+                w/e {new Date().toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })}
+              </p>
+            </div>
+            {streak > 0 && (
+              <div className="text-right">
+                <div className="text-3xl font-black text-[#1a2b38] font-['Inter'] leading-none">🔥 {streak}</div>
+                <div className="text-xs text-[#A8BCC8] mt-0.5">day streak</div>
               </div>
-              {editingTarget === 'apps' ? (
-                <form onSubmit={e => { e.preventDefault(); updateNested('profile', 'weeklyAppTarget', parseInt(targetDraft) || 5); setEditingTarget(null) }}>
-                  <input
-                    autoFocus
-                    className="w-14 border border-[#6D99F2] rounded-lg px-2 py-1 text-xs text-center text-[#263746] focus:outline-none"
-                    value={targetDraft}
-                    onChange={e => setTargetDraft(e.target.value)}
-                    onBlur={() => { updateNested('profile', 'weeklyAppTarget', parseInt(targetDraft) || 5); setEditingTarget(null) }}
-                  />
-                </form>
-              ) : (
-                <button
-                  onClick={() => { setEditingTarget('apps'); setTargetDraft(String(profile.weeklyAppTarget || 5)) }}
-                  className="text-xs text-[#6D99F2] hover:underline cursor-pointer"
-                >edit target</button>
-              )}
-            </div>
-            <div className="w-full h-4 bg-[#EEF3FA] rounded-full overflow-hidden mb-2">
-              <div
-                className={`h-full rounded-full transition-all duration-700 ${appsWeek >= (profile.weeklyAppTarget || 5) ? 'bg-emerald-500' : 'bg-[#6D99F2]'}`}
-                style={{ width: `${Math.min(100, (appsWeek / (profile.weeklyAppTarget || 5)) * 100)}%` }}
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-[#263746]">Applications this week</p>
-              {appsWeek >= (profile.weeklyAppTarget || 5)
-                ? <span className="text-xs text-emerald-600 font-semibold">🎉 Target hit!</span>
-                : <span className="text-xs text-[#7A8FA3]">{(profile.weeklyAppTarget || 5) - appsWeek} to go</span>
-              }
-            </div>
+            )}
           </div>
 
-          {/* Networking */}
-          <div>
-            <div className="flex items-baseline justify-between mb-3">
-              <div className="flex items-baseline gap-2">
-                <span className="text-5xl font-bold text-[#263746] font-['Inter'] leading-none">{networkingWeek}</span>
-                <span className="text-xl text-[#B8CAD8] font-['Inter']">/{profile.weeklyNetworkTarget || 3}</span>
+          <div className="grid sm:grid-cols-2 gap-8">
+            {/* Applications */}
+            <div>
+              <div className="flex items-end justify-between mb-4">
+                <div className="flex items-end gap-2">
+                  <span className="text-6xl font-black text-[#1a2b38] font-['Inter'] leading-none">{appsWeek}</span>
+                  <span className="text-2xl text-[#C8D8E4] font-['Inter'] mb-1">
+                    / {editingTarget === 'apps' ? (
+                      <form className="inline" onSubmit={e => { e.preventDefault(); updateNested('profile', 'weeklyAppTarget', parseInt(targetDraft) || 5); setEditingTarget(null) }}>
+                        <input autoFocus className="w-10 border-b-2 border-[#6D99F2] text-[#6D99F2] text-2xl font-black bg-transparent focus:outline-none text-center" value={targetDraft} onChange={e => setTargetDraft(e.target.value)} onBlur={() => { updateNested('profile', 'weeklyAppTarget', parseInt(targetDraft) || 5); setEditingTarget(null) }} />
+                      </form>
+                    ) : (
+                      <button onClick={() => { setEditingTarget('apps'); setTargetDraft(String(profile.weeklyAppTarget || 5)) }} className="hover:text-[#6D99F2] cursor-pointer transition-colors" title="Edit target">{profile.weeklyAppTarget || 5}</button>
+                    )}
+                  </span>
+                </div>
+                {appsWeek >= (profile.weeklyAppTarget || 5)
+                  ? <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">🎉 Done!</span>
+                  : <span className="text-xs text-[#A8BCC8]">{(profile.weeklyAppTarget || 5) - appsWeek} to go</span>
+                }
               </div>
-              {editingTarget === 'network' ? (
-                <form onSubmit={e => { e.preventDefault(); updateNested('profile', 'weeklyNetworkTarget', parseInt(targetDraft) || 3); setEditingTarget(null) }}>
-                  <input
-                    autoFocus
-                    className="w-14 border border-[#6D99F2] rounded-lg px-2 py-1 text-xs text-center text-[#263746] focus:outline-none"
-                    value={targetDraft}
-                    onChange={e => setTargetDraft(e.target.value)}
-                    onBlur={() => { updateNested('profile', 'weeklyNetworkTarget', parseInt(targetDraft) || 3); setEditingTarget(null) }}
-                  />
-                </form>
-              ) : (
-                <button
-                  onClick={() => { setEditingTarget('network'); setTargetDraft(String(profile.weeklyNetworkTarget || 3)) }}
-                  className="text-xs text-[#6D99F2] hover:underline cursor-pointer"
-                >edit target</button>
-              )}
+              <div className="w-full h-3 bg-[#F0F5FA] rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-700 ${appsWeek >= (profile.weeklyAppTarget || 5) ? 'bg-emerald-500' : 'bg-[#6D99F2]'}`}
+                  style={{ width: `${Math.min(100, (appsWeek / (profile.weeklyAppTarget || 5)) * 100)}%` }}
+                />
+              </div>
+              <p className="text-sm font-semibold text-[#4A5C6B] mt-2">Applications this week</p>
             </div>
-            <div className="w-full h-4 bg-[#EEF3FA] rounded-full overflow-hidden mb-2">
-              <div
-                className={`h-full rounded-full transition-all duration-700 ${networkingWeek >= (profile.weeklyNetworkTarget || 3) ? 'bg-emerald-500' : 'bg-[#6D99F2]'}`}
-                style={{ width: `${Math.min(100, (networkingWeek / (profile.weeklyNetworkTarget || 3)) * 100)}%` }}
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-[#263746]">Networking this week</p>
-              {networkingWeek >= (profile.weeklyNetworkTarget || 3)
-                ? <span className="text-xs text-emerald-600 font-semibold">🎉 Target hit!</span>
-                : <span className="text-xs text-[#7A8FA3]">{(profile.weeklyNetworkTarget || 3) - networkingWeek} to go</span>
-              }
+
+            {/* Networking */}
+            <div>
+              <div className="flex items-end justify-between mb-4">
+                <div className="flex items-end gap-2">
+                  <span className="text-6xl font-black text-[#1a2b38] font-['Inter'] leading-none">{networkingWeek}</span>
+                  <span className="text-2xl text-[#C8D8E4] font-['Inter'] mb-1">
+                    / {editingTarget === 'network' ? (
+                      <form className="inline" onSubmit={e => { e.preventDefault(); updateNested('profile', 'weeklyNetworkTarget', parseInt(targetDraft) || 3); setEditingTarget(null) }}>
+                        <input autoFocus className="w-10 border-b-2 border-[#6D99F2] text-[#6D99F2] text-2xl font-black bg-transparent focus:outline-none text-center" value={targetDraft} onChange={e => setTargetDraft(e.target.value)} onBlur={() => { updateNested('profile', 'weeklyNetworkTarget', parseInt(targetDraft) || 3); setEditingTarget(null) }} />
+                      </form>
+                    ) : (
+                      <button onClick={() => { setEditingTarget('network'); setTargetDraft(String(profile.weeklyNetworkTarget || 3)) }} className="hover:text-[#6D99F2] cursor-pointer transition-colors" title="Edit target">{profile.weeklyNetworkTarget || 3}</button>
+                    )}
+                  </span>
+                </div>
+                {networkingWeek >= (profile.weeklyNetworkTarget || 3)
+                  ? <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">🎉 Done!</span>
+                  : <span className="text-xs text-[#A8BCC8]">{(profile.weeklyNetworkTarget || 3) - networkingWeek} to go</span>
+                }
+              </div>
+              <div className="w-full h-3 bg-[#F0F5FA] rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-700 ${networkingWeek >= (profile.weeklyNetworkTarget || 3) ? 'bg-emerald-500' : 'bg-[#6D99F2]'}`}
+                  style={{ width: `${Math.min(100, (networkingWeek / (profile.weeklyNetworkTarget || 3)) * 100)}%` }}
+                />
+              </div>
+              <p className="text-sm font-semibold text-[#4A5C6B] mt-2">Networking this week</p>
             </div>
           </div>
+        </div>
+
+        {/* Stats footer strip */}
+        <div className="grid grid-cols-4 divide-x divide-[#F0F5FA]">
+          {[
+            { label: 'Total apps', value: totalApps, sub: 'all time' },
+            { label: 'Interviews', value: interviews, sub: `${convRate}% conversion` },
+            { label: 'Day streak', value: streak, sub: streak > 0 ? 'keep going!' : 'start today' },
+            { label: 'Weeks active', value: weeks, sub: profile.startDate ? `since ${new Date(profile.startDate).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}` : '—' },
+          ].map(({ label, value, sub }) => (
+            <div key={label} className="px-6 py-4 text-center">
+              <div className="text-2xl font-black text-[#1a2b38] font-['Inter'] leading-none mb-1">{value}</div>
+              <div className="text-xs font-semibold text-[#4A5C6B]">{label}</div>
+              <div className="text-xs text-[#A8BCC8] mt-0.5">{sub}</div>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* ── ALERTS ── */}
+      {/* ── QUICK ACTIONS ─────────────────────────────────────── */}
+      <div className="mb-6">
+        <p className="text-xs font-bold text-[#A8BCC8] uppercase tracking-widest mb-3">Quick actions</p>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {[
+            { label: 'Log application', page: 'roles', icon: Briefcase, accent: '#6D99F2', accentBg: '#EEF3FA' },
+            { label: 'Add networking', page: 'networking', icon: Users, accent: '#10b981', accentBg: '#ecfdf5' },
+            { label: 'Friday check-in', page: 'checkin', icon: ClipboardList, accent: '#D4AF37', accentBg: '#fefce8' },
+            { label: 'Log coaching', page: 'coaching', icon: CalendarCheck, accent: '#a78bfa', accentBg: '#f5f3ff' },
+          ].map(({ label, page, icon: Icon, accent, accentBg }) => (
+            <button
+              key={label}
+              onClick={() => navigate(page)}
+              className="group bg-white border border-[#E4EDF5] hover:border-[#C8D8E4] hover:shadow-md rounded-2xl p-5 text-left cursor-pointer transition-all"
+            >
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-3 transition-colors" style={{ backgroundColor: accentBg }}>
+                <Icon size={18} style={{ color: accent }} />
+              </div>
+              <p className="text-sm font-bold text-[#263746] mb-0.5">{label}</p>
+              <ArrowRight size={14} className="text-[#C8D8E4] group-hover:text-[#6D99F2] transition-colors mt-1" />
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── ALERTS ─────────────────────────────────────────────── */}
       {checkinOverdue && (
-        <div className="flex items-center gap-3 p-4 rounded-xl mb-4 bg-[#FBD872]/15 border border-[#FBD872]/40">
-          <ClipboardList size={17} className="text-amber-600 flex-shrink-0" />
+        <div className="flex items-center gap-4 bg-amber-50 border border-amber-100 rounded-2xl px-6 py-4 mb-4">
+          <ClipboardList size={20} className="text-amber-500 flex-shrink-0" />
           <div className="flex-1">
-            <span className="font-semibold text-sm text-amber-800">Weekly check-in due</span>
-            <span className="text-sm text-amber-700 ml-2">Keep the habit — fill in this week's reflection.</span>
+            <p className="text-sm font-bold text-amber-800">Weekly check-in due</p>
+            <p className="text-xs text-amber-600 mt-0.5">Keep the habit going — fill in this week's reflection.</p>
           </div>
-          <button
-            onClick={() => navigate('checkin')}
-            className="text-xs font-semibold text-amber-800 bg-white border border-[#FBD872]/60 px-3 py-1.5 rounded-lg hover:bg-[#FBD872]/20 cursor-pointer transition-colors flex-shrink-0"
-          >
+          <button onClick={() => navigate('checkin')} className="text-xs font-bold text-amber-800 bg-white border border-amber-200 px-4 py-2 rounded-xl hover:bg-amber-100 cursor-pointer transition-colors flex-shrink-0">
             Go to check-in
           </button>
         </div>
       )}
 
       {overdueFollowUps.length > 0 && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-4">
+        <div className="bg-red-50 border border-red-100 rounded-2xl p-5 mb-4">
           <div className="flex items-center gap-2 mb-3">
-            <AlertCircle size={15} className="text-red-500" />
-            <span className="text-sm font-semibold text-red-700">{overdueFollowUps.length} follow-up{overdueFollowUps.length !== 1 ? 's' : ''} overdue</span>
+            <AlertCircle size={16} className="text-red-400" />
+            <span className="text-sm font-bold text-red-700">{overdueFollowUps.length} follow-up{overdueFollowUps.length !== 1 ? 's' : ''} overdue</span>
           </div>
           <div className="space-y-2">
             {overdueFollowUps.map(a => (
-              <div key={a.id} className="flex items-center justify-between gap-3 bg-white rounded-lg px-3 py-2 border border-red-100">
+              <div key={a.id} className="flex items-center justify-between gap-3 bg-white rounded-xl px-4 py-2.5 border border-red-100">
                 <div>
-                  <span className="text-sm font-medium text-[#263746]">{a.company || 'Untitled'}</span>
-                  {a.jobRole && <span className="text-xs text-[#7A8FA3] ml-2">{a.jobRole}</span>}
-                  <span className="text-xs text-red-500 ml-2">Due {a.followUpDate}</span>
+                  <span className="text-sm font-semibold text-[#263746]">{a.company || 'Untitled'}</span>
+                  {a.jobRole && <span className="text-xs text-[#A8BCC8] ml-2">{a.jobRole}</span>}
+                  <span className="text-xs text-red-400 ml-2">due {a.followUpDate}</span>
                 </div>
-                <button onClick={() => markFollowUpDone(a.id)} className="text-xs text-emerald-600 font-semibold hover:underline cursor-pointer flex-shrink-0">
-                  Mark done
-                </button>
+                <button onClick={() => markFollowUpDone(a.id)} className="text-xs text-emerald-600 font-bold hover:underline cursor-pointer flex-shrink-0">Mark done</button>
               </div>
             ))}
           </div>
@@ -453,56 +383,49 @@ export default function Dashboard({ navigate }) {
       {modulePrompts.length > 0 && (
         <div className="mb-6 space-y-2">
           {modulePrompts.map((p, i) => (
-            <div
-              key={i}
-              className={`flex items-start gap-3 p-4 rounded-xl border ${
-                p.urgency === 'amber' ? 'bg-amber-50 border-amber-200' :
-                p.urgency === 'blue' ? 'bg-[#EEF3FA] border-[#C5D8EF]' :
-                'bg-[#F8F5F2] border-[#D8E4EC]'
-              }`}
-            >
-              <span className="text-xl flex-shrink-0">{p.icon}</span>
+            <div key={i} className={`flex items-center gap-4 p-4 rounded-2xl border ${p.urgency === 'amber' ? 'bg-amber-50 border-amber-100' : p.urgency === 'blue' ? 'bg-[#EEF3FA] border-[#D0E4F8]' : 'bg-[#F5F9FD] border-[#E4EDF5]'}`}>
+              <span className="text-2xl flex-shrink-0">{p.icon}</span>
               <div className="flex-1">
                 <p className="text-xs font-bold text-[#263746] mb-0.5">{p.module}</p>
-                <p className="text-xs text-[#4A5C6B]">{p.message}</p>
+                <p className="text-xs text-[#5A7080]">{p.message}</p>
               </div>
-              <Lightbulb size={14} className="text-[#D4AF37] flex-shrink-0 mt-0.5" />
+              <Lightbulb size={14} className="text-[#D4AF37] flex-shrink-0" />
             </div>
           ))}
         </div>
       )}
 
-      {/* ── WIN LOG ── */}
-      <div className="bg-white rounded-2xl border border-[#D8E4EC] p-6 mb-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Trophy size={18} className="text-[#D4AF37]" />
-          <h3 className="font-bold text-[#263746] font-['Inter']">Win Log</h3>
-          <span className="text-xs text-[#7A8FA3]">— celebrate the small stuff</span>
+      {/* ── WIN LOG ────────────────────────────────────────────── */}
+      <div className="bg-white rounded-3xl border border-[#E4EDF5] p-7 mb-6">
+        <div className="flex items-center gap-2.5 mb-5">
+          <Trophy size={20} className="text-[#D4AF37]" />
+          <h3 className="text-lg font-black text-[#1a2b38] font-['Inter']">Win Log</h3>
+          <span className="text-sm text-[#A8BCC8]">— celebrate the small stuff</span>
         </div>
         <form onSubmit={addWin} className="flex gap-2 mb-4">
           <input
-            className="flex-1 border border-[#D8E4EC] rounded-xl px-4 py-2.5 text-sm text-[#263746] placeholder:text-[#B8CAD8] focus:outline-none focus:ring-2 focus:ring-[#6D99F2]/30 bg-[#F8F5F2]"
-            placeholder="Log a win — e.g. Got a callback from Google!"
+            className="flex-1 border border-[#E4EDF5] rounded-xl px-4 py-3 text-sm text-[#263746] placeholder:text-[#C8D8E4] focus:outline-none focus:ring-2 focus:ring-[#6D99F2]/25 bg-[#F8FBFD]"
+            placeholder="e.g. Got a callback from Google!"
             value={newWin}
             onChange={e => setNewWin(e.target.value)}
           />
-          <button type="submit" className="bg-[#263746] hover:bg-[#1a2832] text-white px-4 py-2.5 rounded-xl text-sm font-semibold cursor-pointer transition-colors flex items-center gap-1.5">
-            <Plus size={14} /> Add
+          <button type="submit" className="bg-[#263746] hover:bg-[#1a2832] text-white px-5 py-3 rounded-xl text-sm font-bold cursor-pointer transition-colors flex items-center gap-2">
+            <Plus size={15} /> Add
           </button>
         </form>
         {wins.length === 0 ? (
-          <p className="text-sm text-[#B8CAD8] italic text-center py-4">No wins logged yet — they don't have to be big!</p>
+          <p className="text-sm text-[#C8D8E4] italic text-center py-6">No wins logged yet — they don't have to be big!</p>
         ) : (
-          <div className="space-y-2 max-h-48 overflow-y-auto">
+          <div className="space-y-2 max-h-52 overflow-y-auto">
             {wins.map(w => (
-              <div key={w.id} className="flex items-center justify-between gap-3 bg-gradient-to-r from-[#EEF3FA] to-[#F8F5F2] rounded-xl px-4 py-2.5 border border-[#E8F0F8]">
-                <div className="flex items-center gap-2.5">
-                  <span className="text-base">🏆</span>
+              <div key={w.id} className="flex items-center justify-between gap-3 bg-[#F8FBFD] rounded-xl px-4 py-3 border border-[#EEF3FA]">
+                <div className="flex items-center gap-3">
+                  <span>🏆</span>
                   <span className="text-sm text-[#263746] font-medium">{w.text}</span>
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className="text-xs text-[#B8CAD8]">{w.date}</span>
-                  <button onClick={() => removeWin(w.id)} className="text-[#D8E4EC] hover:text-[#FF5E5B] transition-colors cursor-pointer">✕</button>
+                <div className="flex items-center gap-3 flex-shrink-0">
+                  <span className="text-xs text-[#C8D8E4]">{w.date}</span>
+                  <button onClick={() => removeWin(w.id)} className="text-[#D8E4EC] hover:text-[#FF5E5B] transition-colors cursor-pointer text-xs">✕</button>
                 </div>
               </div>
             ))}
@@ -510,76 +433,80 @@ export default function Dashboard({ navigate }) {
         )}
       </div>
 
-      {/* ── CHARTS ROW ── */}
-      <div className="grid lg:grid-cols-2 gap-6 mb-6">
-        <div className="bg-white rounded-2xl p-6 border border-[#D8E4EC]">
-          <h3 className="font-bold text-[#263746] mb-4 font-['Inter']">Applications Over Time</h3>
+      {/* ── CHARTS ─────────────────────────────────────────────── */}
+      <div className="grid lg:grid-cols-2 gap-5 mb-6">
+        <div className="bg-white rounded-3xl p-7 border border-[#E4EDF5]">
+          <h3 className="text-base font-black text-[#1a2b38] font-['Inter'] mb-5">Applications Over Time</h3>
           {appOverTime.length > 1 ? (
             <ResponsiveContainer width="100%" height={180}>
               <LineChart data={appOverTime}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#EEF3FA" />
-                <XAxis dataKey="week" tick={{ fontSize: 10, fill: '#7A8FA3' }} />
-                <YAxis tick={{ fontSize: 10, fill: '#7A8FA3' }} allowDecimals={false} />
-                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #D8E4EC' }} />
-                <Line type="monotone" dataKey="apps" stroke="#6D99F2" strokeWidth={2.5} dot={{ fill: '#6D99F2', r: 4 }} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#F0F5FA" />
+                <XAxis dataKey="week" tick={{ fontSize: 10, fill: '#A8BCC8' }} />
+                <YAxis tick={{ fontSize: 10, fill: '#A8BCC8' }} allowDecimals={false} />
+                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 12, border: '1px solid #E4EDF5', boxShadow: '0 4px 12px rgba(0,0,0,0.06)' }} />
+                <Line type="monotone" dataKey="apps" stroke="#6D99F2" strokeWidth={2.5} dot={{ fill: '#6D99F2', r: 4, strokeWidth: 0 }} />
               </LineChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-[180px] flex flex-col items-center justify-center text-[#B8CAD8] text-sm gap-2">
-              <TrendingUp size={28} className="opacity-30" />
-              Log applications with dates to see your progress
+            <div className="h-[180px] flex flex-col items-center justify-center text-[#C8D8E4] text-sm gap-2">
+              <TrendingUp size={28} className="opacity-40" />
+              Log applications with dates to see progress
             </div>
           )}
         </div>
 
-        <div className="bg-white rounded-2xl p-6 border border-[#D8E4EC]">
-          <h3 className="font-bold text-[#263746] mb-4 font-['Inter']">Application Pipeline</h3>
+        <div className="bg-white rounded-3xl p-7 border border-[#E4EDF5]">
+          <h3 className="text-base font-black text-[#1a2b38] font-['Inter'] mb-5">Application Pipeline</h3>
           {totalApps > 0 ? (
             <ResponsiveContainer width="100%" height={180}>
-              <BarChart data={pipeline} barSize={32}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#EEF3FA" />
-                <XAxis dataKey="stage" tick={{ fontSize: 9, fill: '#7A8FA3' }} />
-                <YAxis tick={{ fontSize: 10, fill: '#7A8FA3' }} allowDecimals={false} />
-                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #D8E4EC' }} />
+              <BarChart data={[
+                { stage: 'Researching', count: applications.filter(a => a.status === 'Researching').length },
+                { stage: 'Applied', count: applications.filter(a => a.status === 'Applied').length },
+                { stage: 'Interview', count: applications.filter(a => a.status === 'Interview Scheduled').length },
+                { stage: 'Offer', count: applications.filter(a => a.status === 'Offer Received').length },
+              ]} barSize={32}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#F0F5FA" />
+                <XAxis dataKey="stage" tick={{ fontSize: 10, fill: '#A8BCC8' }} />
+                <YAxis tick={{ fontSize: 10, fill: '#A8BCC8' }} allowDecimals={false} />
+                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 12, border: '1px solid #E4EDF5', boxShadow: '0 4px 12px rgba(0,0,0,0.06)' }} />
                 <Bar dataKey="count" fill="#263746" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-[180px] flex flex-col items-center justify-center text-[#B8CAD8] text-sm gap-2">
-              <Briefcase size={28} className="opacity-30" />
+            <div className="h-[180px] flex flex-col items-center justify-center text-[#C8D8E4] text-sm gap-2">
+              <Briefcase size={28} className="opacity-40" />
               Add applications to see your pipeline
             </div>
           )}
         </div>
       </div>
 
-      {/* ── ROLE FIT ── */}
-      {roleFit ? (
-        <div className="bg-white rounded-2xl p-6 border border-[#D8E4EC] mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Target size={18} className="text-[#6D99F2]" />
-              <h3 className="font-bold text-[#263746] font-['Inter']">Role Fit Score</h3>
+      {/* ── ROLE FIT ───────────────────────────────────────────── */}
+      {roleFit && (
+        <div className="bg-white rounded-3xl p-7 border border-[#E4EDF5] mb-6">
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-2.5">
+              <Target size={20} className="text-[#6D99F2]" />
+              <h3 className="text-base font-black text-[#1a2b38] font-['Inter']">Role Fit Score</h3>
             </div>
-            <div className={`px-3 py-1 rounded-full text-xs font-semibold ${fitBg} ${fitText}`}>
-              {fitVerdict}
+            <div className={`px-3 py-1 rounded-full text-xs font-bold ${fitBg} ${fitText}`}>
+              {roleFit.pct >= 70 ? 'Strong alignment' : roleFit.pct >= 40 ? 'Moderate alignment' : 'Low alignment'}
             </div>
           </div>
-          <div className="grid lg:grid-cols-2 gap-6">
+          <div className="grid lg:grid-cols-2 gap-7">
             <div>
               <div className="flex items-end gap-3 mb-3">
-                <span className="text-5xl font-bold text-[#263746] font-['Inter']">{roleFit.overallAvg.toFixed(1)}</span>
-                <span className="text-lg text-[#B8CAD8] mb-1">/5</span>
-                <span className="text-sm text-[#7A8FA3] mb-1.5">avg across {roleFit.ratedCount} role{roleFit.ratedCount !== 1 ? 's' : ''}</span>
+                <span className="text-5xl font-black text-[#1a2b38] font-['Inter']">{roleFit.overallAvg.toFixed(1)}</span>
+                <span className="text-xl text-[#C8D8E4] mb-1">/5</span>
+                <span className="text-sm text-[#A8BCC8] mb-1.5">avg across {roleFit.ratedCount} role{roleFit.ratedCount !== 1 ? 's' : ''}</span>
               </div>
-              <div className="w-full h-4 bg-[#EEF3FA] rounded-full overflow-hidden mb-3">
+              <div className="w-full h-3 bg-[#F0F5FA] rounded-full overflow-hidden mb-3">
                 <div className="h-full rounded-full transition-all duration-500" style={{ width: `${roleFit.pct}%`, backgroundColor: fitColor }} />
               </div>
               {roleFit.best && (
-                <p className="text-xs text-[#7A8FA3]">
-                  Best fit: <span className="font-semibold text-[#263746]">{roleFit.best.jobRole || 'Untitled'}</span>
-                  {roleFit.best.company ? ` at ${roleFit.best.company}` : ''}
-                  {' '}({roleFit.best.total}/{BP_CATEGORIES.length * 5})
+                <p className="text-xs text-[#A8BCC8]">
+                  Best fit: <span className="font-bold text-[#263746]">{roleFit.best.jobRole || 'Untitled'}</span>
+                  {roleFit.best.company ? ` at ${roleFit.best.company}` : ''} ({roleFit.best.total}/{BP_CATEGORIES.length * 5})
                 </p>
               )}
             </div>
@@ -589,58 +516,36 @@ export default function Dashboard({ navigate }) {
                 const barColor = pct >= 70 ? '#10b981' : pct >= 40 ? '#f59e0b' : '#FF5E5B'
                 return (
                   <div key={label} className="flex items-center gap-3">
-                    <span className="text-xs text-[#4A5C6B] w-20 flex-shrink-0">{label}</span>
-                    <div className="flex-1 h-2.5 bg-[#EEF3FA] rounded-full overflow-hidden">
+                    <span className="text-xs text-[#5A7080] w-20 flex-shrink-0">{label}</span>
+                    <div className="flex-1 h-2 bg-[#F0F5FA] rounded-full overflow-hidden">
                       <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: barColor }} />
                     </div>
-                    <span className="text-xs font-semibold text-[#263746] w-6 text-right">{avg.toFixed(1)}</span>
+                    <span className="text-xs font-bold text-[#263746] w-6 text-right">{avg.toFixed(1)}</span>
                   </div>
                 )
               })}
             </div>
           </div>
         </div>
-      ) : null}
+      )}
 
-      {/* ── MILESTONES ── */}
-      <div className="bg-white rounded-2xl p-6 border border-[#D8E4EC] mb-6">
-        <h3 className="font-bold text-[#263746] mb-5 font-['Inter']">Milestones</h3>
+      {/* ── MILESTONES ─────────────────────────────────────────── */}
+      <div className="bg-white rounded-3xl p-7 border border-[#E4EDF5] mb-6">
+        <h3 className="text-base font-black text-[#1a2b38] font-['Inter'] mb-5">Milestones</h3>
         <div className="grid grid-cols-3 gap-4">
           {[
-            { label: 'First application', done: firstApp, msg: 'First application in. This is how it starts.' },
-            { label: 'First interview', done: firstInterview, msg: 'First interview booked. You made the leap.' },
-            { label: 'First offer', done: firstOffer, msg: "First offer on the table. Let's choose wisely." },
+            { label: 'First application', done: applications.length > 0, msg: 'First application in. This is how it starts.' },
+            { label: 'First interview', done: applications.some(a => a.interviewDate), msg: 'First interview booked. You made the leap.' },
+            { label: 'First offer', done: (data.offers?.length > 0), msg: "First offer on the table. Let's choose wisely." },
           ].map(({ label, done, msg }) => (
-            <div
-              key={label}
-              className={`p-5 rounded-xl text-center border transition-all ${
-                done
-                  ? 'bg-gradient-to-br from-[#EEF3FA] to-[#F0F6FF] border-[#6D99F2]/30 shadow-sm'
-                  : 'bg-[#F8F5F2] border-[#E8EDEF]'
-              }`}
-            >
-              <div className={`text-2xl mb-2 ${done ? '' : 'grayscale opacity-30'}`}>{done ? '✅' : '⭕'}</div>
-              <div className={`text-xs font-bold mb-1 ${done ? 'text-[#263746]' : 'text-[#B8CAD8]'}`}>{label}</div>
+            <div key={label} className={`p-5 rounded-2xl text-center transition-all ${done ? 'bg-[#F0F6FF] border-2 border-[#D0E4F8]' : 'bg-[#F8FBFD] border border-[#EEF3FA]'}`}>
+              <div className={`text-2xl mb-2 ${done ? '' : 'grayscale opacity-25'}`}>{done ? '✅' : '⭕'}</div>
+              <div className={`text-xs font-bold mb-1.5 ${done ? 'text-[#263746]' : 'text-[#C8D8E4]'}`}>{label}</div>
               {done && <div className="text-xs text-[#6D99F2] italic font-['Playfair_Display'] leading-snug">{msg}</div>}
             </div>
           ))}
         </div>
       </div>
-
-      {/* ── APPLICATIONS BY ROLE ── */}
-      {pieData.length > 0 && (
-        <div className="bg-white rounded-2xl p-6 border border-[#D8E4EC] mb-6">
-          <h3 className="font-bold text-[#263746] mb-4 font-['Inter']">Applications by Role</h3>
-          <ResponsiveContainer width="100%" height={200}>
-            <PieChart>
-              <Pie data={pieData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} dataKey="value" label={({ name, value }) => `${name} (${value})`}>
-                {pieData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-              </Pie>
-              <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-      )}
 
     </div>
   )
