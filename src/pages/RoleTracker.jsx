@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { useData } from '../context/DataContext'
-import { Plus, Trash2, ChevronDown, ExternalLink, Info, LayoutGrid, List, Columns2 } from 'lucide-react'
+import { Plus, Trash2, ChevronDown, ExternalLink, Info, LayoutGrid, List, Columns2, Search } from 'lucide-react'
 import FileUpload from '../components/FileUpload'
 
 const STATUS_OPTIONS = ['Not Started', 'Researching', 'Applied', 'Awaiting Response', 'Interview Scheduled', 'Offer Received', 'Rejected', 'Withdrawn']
 const OUTCOME_OPTIONS = ['', 'Progressing', 'Rejected', 'Offer', 'Withdrawn', 'Awaiting']
 const OUTREACH_TYPES = ['Call', 'Email', 'LinkedIn message', 'Received response']
 const WORK_TYPES = ['', 'Remote', 'Hybrid', 'On-site']
+const SOURCE_OPTIONS = ['', 'LinkedIn', 'Seek', 'Indeed', 'Company website', 'Referral', 'Recruiter', 'Other']
 const WORK_TYPE_COLORS = {
   'Remote': 'bg-emerald-50 text-emerald-700',
   'Hybrid': 'bg-blue-50 text-blue-700',
@@ -33,6 +34,7 @@ const BP_CATEGORIES = [
   { key: 'salary', label: 'Salary / Benefits' },
 ]
 const inputCls = "w-full border border-[#D8E4EC] rounded-lg px-2 py-1.5 text-xs text-[#263746] focus:outline-none focus:ring-2 focus:ring-[#6D99F2]/40 bg-white placeholder:text-[#7A8FA3]"
+const ACTIVE_STATUSES = ['Not Started', 'Researching', 'Applied', 'Awaiting Response', 'Interview Scheduled', 'Offer Received']
 
 function getAlignmentMeta(ratings) {
   const total = BP_CATEGORIES.reduce((sum, c) => sum + (parseInt(ratings?.[c.key]) || 0), 0)
@@ -60,7 +62,7 @@ function AlignmentPill({ ratings }) {
 function newApp() {
   return {
     id: Date.now(), status: 'Not Started', jobRole: '', company: '', jobUrl: '', alignment: '', why: '',
-    blueprintRatings: {}, selectedResume: '',
+    blueprintRatings: {}, selectedResume: '', source: '',
     connectedHM: false, connectionMsg: false, hmContact: '', hmRole: '',
     notes: '', resumeLink: '', coverLetterLink: '', closeDate: '', submittedDate: '',
     followUpDate: '', followUpDone: false,
@@ -72,6 +74,14 @@ function newApp() {
   }
 }
 
+const FORM_TABS = [
+  { id: 'details', label: 'Details' },
+  { id: 'blueprint', label: 'Blueprint' },
+  { id: 'activity', label: 'Activity' },
+  { id: 'interview', label: 'Interview' },
+  { id: 'documents', label: 'Documents' },
+]
+
 // ── ExpandedForm is defined OUTSIDE RoleTracker so it never gets recreated on re-render ──
 function ExpandedForm({
   app, blueprint, resumeOptions,
@@ -79,339 +89,394 @@ function ExpandedForm({
   addOutreach, updateOutreach, removeOutreach,
   addTodo, updateTodo, removeTodo, quickAddTodo,
 }) {
+  const [tab, setTab] = useState('details')
   const today = new Date().toISOString().slice(0, 10)
   const followUpOverdue = app.followUpDate && app.followUpDate < today && !app.followUpDone
+  const todosRemaining = (app.todos || []).filter(t => !t.done).length
 
   return (
-    <div className="px-5 py-5">
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-        <div>
-          <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Status</label>
-          <select className={inputCls} value={app.status} onChange={e => updateApp(app.id, 'status', e.target.value)}>
-            {STATUS_OPTIONS.map(s => <option key={s}>{s}</option>)}
-          </select>
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Job Role</label>
-          <input className={inputCls} value={app.jobRole} onChange={e => updateApp(app.id, 'jobRole', e.target.value)} placeholder="e.g. Senior Product Manager" />
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Company</label>
-          <input className={inputCls} value={app.company} onChange={e => updateApp(app.id, 'company', e.target.value)} placeholder="Company name" />
-        </div>
-        <div className="col-span-2 lg:col-span-3">
-          <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Job Listing URL</label>
-          <div className="flex gap-1.5">
-            <input className={`${inputCls} flex-1`} type="url" value={app.jobUrl || ''} onChange={e => updateApp(app.id, 'jobUrl', e.target.value)} placeholder="Paste the link to the job posting" />
-            {app.jobUrl && <a href={app.jobUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-xs text-white bg-[#6D99F2] hover:bg-[#263746] px-3 rounded-lg transition-colors flex-shrink-0"><ExternalLink size={12} /> View</a>}
-          </div>
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Close Date</label>
-          <input className={inputCls} type="date" value={app.closeDate} onChange={e => updateApp(app.id, 'closeDate', e.target.value)} />
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Submitted Date</label>
-          <input className={inputCls} type="date" value={app.submittedDate} onChange={e => updateApp(app.id, 'submittedDate', e.target.value)} />
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Follow-up Date</label>
-          <input className={`${inputCls} ${followUpOverdue ? 'border-red-400 text-red-600' : ''}`} type="date" value={app.followUpDate || ''} onChange={e => updateApp(app.id, 'followUpDate', e.target.value)} />
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Resume Used</label>
-          <select className={inputCls} value={app.selectedResume || ''} onChange={e => updateApp(app.id, 'selectedResume', e.target.value)}>
-            {resumeOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-          </select>
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Work Type</label>
-          <select className={inputCls} value={app.workType || ''} onChange={e => updateApp(app.id, 'workType', e.target.value)}>
-            {WORK_TYPES.map(o => <option key={o} value={o}>{o || 'Select work type'}</option>)}
-          </select>
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Location / City</label>
-          <input className={inputCls} value={app.location || ''} onChange={e => updateApp(app.id, 'location', e.target.value)} placeholder="e.g. Sydney, Melbourne, Brisbane" />
-        </div>
-        <div className="col-span-2 lg:col-span-3">
-          <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Why this role?</label>
-          <textarea className={inputCls} rows={2} value={app.why} onChange={e => updateApp(app.id, 'why', e.target.value)} placeholder="Your motivation for applying" />
-        </div>
-      </div>
-
-      {/* Blueprint Alignment */}
-      <div className="mt-4 pt-4 border-t border-[#EEF3FA]">
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <p className="text-xs font-semibold text-[#4A5C6B] uppercase tracking-wide">Blueprint Alignment</p>
-            <p className="text-[10px] text-[#7A8FA3] mt-0.5">Rate how well this role matches your Career Blueprint (1 = poor, 5 = perfect)</p>
-          </div>
-          {(() => {
-            const { total, max, pct, color } = getAlignmentMeta(app.blueprintRatings)
-            if (total === 0) return null
-            const textColor = color === 'emerald' ? 'text-emerald-600' : color === 'amber' ? 'text-amber-600' : 'text-[#FF5E5B]'
-            const verdict = pct >= 0.7 ? 'Strong fit' : pct >= 0.4 ? 'Partial fit' : 'Weak fit'
-            return (
-              <div className="text-right">
-                <p className={`text-sm font-bold ${textColor}`}>{total}/{max}</p>
-                <p className={`text-[10px] font-medium ${textColor}`}>{verdict}</p>
-              </div>
-            )
-          })()}
-        </div>
-        {(() => {
-          const { pct, color, total } = getAlignmentMeta(app.blueprintRatings)
-          const fillColor = color === 'emerald' ? 'bg-emerald-500' : color === 'amber' ? 'bg-amber-400' : 'bg-[#FF5E5B]'
-          return total > 0 ? (
-            <div className="w-full h-3 bg-[#EEF3FA] rounded-full overflow-hidden mb-4 border border-[#D8E4EC]">
-              <div className={`h-full rounded-full transition-all duration-300 ${fillColor}`} style={{ width: `${pct * 100}%` }} />
-            </div>
-          ) : null
-        })()}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {BP_CATEGORIES.map(({ key, label }) => (
-            <div key={key} className="relative group">
-              <label className="flex items-center gap-1 text-[10px] font-medium text-[#4A5C6B] mb-1 cursor-default">
-                {label}
-                <Info size={10} className="text-[#7A8FA3] flex-shrink-0" />
-              </label>
-              <div className="absolute bottom-full left-0 mb-1.5 z-20 w-56 bg-[#263746] text-white text-[11px] rounded-lg px-3 py-2.5 hidden group-hover:block shadow-xl pointer-events-none">
-                {blueprint[key] ? blueprint[key] : <span className="italic text-white/50">Not filled in yet — go to My Profile to add this.</span>}
-                <div className="absolute top-full left-4 border-4 border-transparent border-t-[#263746]" />
-              </div>
-              <select className={inputCls} value={app.blueprintRatings?.[key] ?? ''} onChange={e => updateRating(app.id, key, e.target.value)}>
-                <option value="">--</option>
-                <option value="1">1 - Poor</option>
-                <option value="2">2 - Low</option>
-                <option value="3">3 - Okay</option>
-                <option value="4">4 - Good</option>
-                <option value="5">5 - Perfect</option>
-              </select>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* HM / Recruiter */}
-      <div className="mt-4 pt-4 border-t border-[#EEF3FA]">
-        <p className="text-xs font-semibold text-[#4A5C6B] uppercase tracking-wide mb-3">HM / Recruiter</p>
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-          <div className="flex items-center gap-2">
-            <input type="checkbox" id={`hm-${app.id}`} checked={app.connectedHM} onChange={e => updateApp(app.id, 'connectedHM', e.target.checked)} className="accent-[#263746]" />
-            <label htmlFor={`hm-${app.id}`} className="text-xs text-[#4A5C6B]">Connected with HM/Recruiter</label>
-          </div>
-          <div className="flex items-center gap-2">
-            <input type="checkbox" id={`msg-${app.id}`} checked={app.connectionMsg} onChange={e => updateApp(app.id, 'connectionMsg', e.target.checked)} className="accent-[#263746]" />
-            <label htmlFor={`msg-${app.id}`} className="text-xs text-[#4A5C6B]">Connection message sent</label>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-[#4A5C6B] mb-1">HM/Recruiter Contact</label>
-            <input className={inputCls} value={app.hmContact} onChange={e => updateApp(app.id, 'hmContact', e.target.value)} placeholder="Email or LinkedIn" />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-[#4A5C6B] mb-1">HM/Recruiter Role/Title</label>
-            <input className={inputCls} value={app.hmRole} onChange={e => updateApp(app.id, 'hmRole', e.target.value)} placeholder="e.g. Hiring Manager" />
-          </div>
-          <div className="col-span-2">
-            <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Conversation Notes</label>
-            <textarea className={inputCls} rows={2} value={app.notes} onChange={e => updateApp(app.id, 'notes', e.target.value)} placeholder="Notes from your conversation" />
-          </div>
-        </div>
-      </div>
-
-      {/* Job Description */}
-      <div className="mt-4 pt-4 border-t border-[#EEF3FA]">
-        <p className="text-xs font-semibold text-[#4A5C6B] uppercase tracking-wide mb-3">Job Description</p>
-        <textarea className={inputCls} rows={6} value={app.jobDescription || ''} onChange={e => updateApp(app.id, 'jobDescription', e.target.value)} placeholder="Paste the full job description here — useful for tailoring your resume and prep..." />
-      </div>
-
-      {/* Documents */}
-      <div className="mt-4 pt-4 border-t border-[#EEF3FA]">
-        <p className="text-xs font-semibold text-[#4A5C6B] uppercase tracking-wide mb-3">Documents</p>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <FileUpload label="Resume" value={app.resumeFile} onChange={file => updateApp(app.id, 'resumeFile', file)} />
-            <div className="flex items-center gap-2"><div className="h-px flex-1 bg-[#D8E4EC]" /><span className="text-[10px] text-[#7A8FA3]">or link</span><div className="h-px flex-1 bg-[#D8E4EC]" /></div>
-            <div className="flex gap-1.5">
-              <input className={`${inputCls} flex-1`} type="url" value={app.resumeLink} onChange={e => updateApp(app.id, 'resumeLink', e.target.value)} placeholder="Paste Drive link" />
-              {app.resumeLink && <a href={app.resumeLink} target="_blank" rel="noreferrer" className="text-[#6D99F2] hover:text-[#263746]"><ExternalLink size={16} /></a>}
-            </div>
-          </div>
-          <div className="space-y-2">
-            <FileUpload label="Cover Letter" value={app.coverLetterFile} onChange={file => updateApp(app.id, 'coverLetterFile', file)} />
-            <div className="flex items-center gap-2"><div className="h-px flex-1 bg-[#D8E4EC]" /><span className="text-[10px] text-[#7A8FA3]">or link</span><div className="h-px flex-1 bg-[#D8E4EC]" /></div>
-            <div className="flex gap-1.5">
-              <input className={`${inputCls} flex-1`} type="url" value={app.coverLetterLink} onChange={e => updateApp(app.id, 'coverLetterLink', e.target.value)} placeholder="Paste Drive link" />
-              {app.coverLetterLink && <a href={app.coverLetterLink} target="_blank" rel="noreferrer" className="text-[#6D99F2] hover:text-[#263746]"><ExternalLink size={16} /></a>}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Feedback */}
-      {(app.status === 'Rejected' || app.status === 'Interview Scheduled' || app.status === 'Offer Received' || app.feedback) && (
-        <div className="mt-4 pt-4 border-t border-[#EEF3FA]">
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-            <p className="text-xs font-bold text-amber-800 uppercase tracking-wide mb-2">Feedback Received</p>
-            <textarea
-              className="w-full border border-amber-200 rounded-lg px-3 py-2 text-sm text-[#263746] focus:outline-none focus:ring-2 focus:ring-amber-300/40 bg-white placeholder:text-[#7A8FA3] resize-none"
-              rows={3}
-              value={app.feedback}
-              onChange={e => updateApp(app.id, 'feedback', e.target.value)}
-              placeholder="What feedback did you receive? What would you do differently?"
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Interview & Outcome */}
-      <div className="mt-4 pt-4 border-t border-[#EEF3FA]">
-        <p className="text-xs font-semibold text-[#4A5C6B] uppercase tracking-wide mb-3">Interview & Outcome</p>
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Interview Date</label>
-            <input className={inputCls} type="date" value={app.interviewDate} onChange={e => updateApp(app.id, 'interviewDate', e.target.value)} />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Interview Stage</label>
-            <input className={inputCls} value={app.interviewStage} onChange={e => updateApp(app.id, 'interviewStage', e.target.value)} placeholder="e.g. First round" />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Outcome</label>
-            <select className={inputCls} value={app.outcome} onChange={e => updateApp(app.id, 'outcome', e.target.value)}>
-              {OUTCOME_OPTIONS.map(o => <option key={o}>{o}</option>)}
-            </select>
-          </div>
-          <div className="flex items-center gap-2">
-            <input type="checkbox" id={`prep-${app.id}`} checked={app.prepDone} onChange={e => updateApp(app.id, 'prepDone', e.target.checked)} className="accent-[#263746]" />
-            <label htmlFor={`prep-${app.id}`} className="text-xs text-[#4A5C6B]">Interview prep completed</label>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Interview Outcome</label>
-            <input className={inputCls} value={app.interviewOutcome} onChange={e => updateApp(app.id, 'interviewOutcome', e.target.value)} placeholder="e.g. Progressed to next round" />
-          </div>
-          <div className="col-span-2 lg:col-span-3">
-            <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Additional Notes</label>
-            <textarea className={inputCls} rows={2} value={app.additionalNotes} onChange={e => updateApp(app.id, 'additionalNotes', e.target.value)} placeholder="Anything else" />
-          </div>
-        </div>
-      </div>
-
-      {/* Outreach Log */}
-      <div className="mt-4 pt-4 border-t border-[#EEF3FA]">
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-xs font-semibold text-[#4A5C6B] uppercase tracking-wide">Outreach Log</p>
-          <button onClick={() => addOutreach(app.id)} className="flex items-center gap-1 text-xs text-[#6D99F2] hover:text-[#263746] cursor-pointer font-medium transition-colors">
-            <Plus size={12} /> Log interaction
+    <div>
+      {/* Tab nav */}
+      <div className="flex border-b border-[#EEF3FA] px-5 bg-white overflow-x-auto">
+        {FORM_TABS.map(t => (
+          <button
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className={`relative px-4 py-3 text-xs font-semibold cursor-pointer transition-colors whitespace-nowrap border-b-2 -mb-px flex items-center gap-1.5 ${tab === t.id ? 'text-[#263746] border-[#263746]' : 'text-[#7A8FA3] border-transparent hover:text-[#4A5C6B]'}`}
+          >
+            {t.label}
+            {t.id === 'activity' && todosRemaining > 0 && (
+              <span className="text-[9px] font-bold bg-[#6D99F2] text-white rounded-full px-1.5 py-0.5 leading-none">{todosRemaining}</span>
+            )}
           </button>
-        </div>
-        {(app.outreachLog || []).length === 0 ? (
-          <p className="text-xs text-[#7A8FA3] italic">No outreach logged yet. Track every call, email and message here.</p>
-        ) : (
-          <div className="space-y-2">
-            {[...(app.outreachLog || [])].sort((a, b) => b.date.localeCompare(a.date)).map(o => (
-              <div key={o.id} className="grid grid-cols-[auto_auto_1fr_auto] gap-2 items-center bg-[#F8F5F2] rounded-lg px-3 py-2">
-                <input className="border border-[#D8E4EC] rounded px-2 py-1 text-xs bg-white focus:outline-none w-28 flex-shrink-0" type="date" value={o.date} onChange={e => updateOutreach(app.id, o.id, 'date', e.target.value)} />
-                <select className="border border-[#D8E4EC] rounded px-2 py-1 text-xs bg-white focus:outline-none flex-shrink-0" value={o.type} onChange={e => updateOutreach(app.id, o.id, 'type', e.target.value)}>
-                  {OUTREACH_TYPES.map(t => <option key={t}>{t}</option>)}
-                </select>
-                <input className="bg-transparent text-xs text-[#263746] focus:outline-none border-b border-dashed border-[#D8E4EC] focus:border-[#6D99F2] placeholder:text-[#7A8FA3] min-w-0" value={o.notes} onChange={e => updateOutreach(app.id, o.id, 'notes', e.target.value)} placeholder="What happened? Any response?" />
-                <button onClick={() => removeOutreach(app.id, o.id)} className="text-[#D8E4EC] hover:text-[#FF5E5B] transition-colors cursor-pointer flex-shrink-0"><Trash2 size={13} /></button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* To-Do */}
-      <div className="mt-4 pt-4 border-t border-[#EEF3FA]">
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-xs font-semibold text-[#4A5C6B] uppercase tracking-wide">To-Do</p>
-          <button onClick={() => addTodo(app.id)} className="flex items-center gap-1 text-xs text-[#6D99F2] hover:text-[#263746] cursor-pointer font-medium transition-colors">
-            <Plus size={12} /> Add task
-          </button>
-        </div>
-        {(app.todos || []).map(t => (
-          <div key={t.id} className="flex items-center gap-2 py-1.5">
-            <input type="checkbox" checked={t.done} onChange={e => updateTodo(app.id, t.id, 'done', e.target.checked)} className="accent-[#263746]" />
-            <input
-              className={`flex-1 bg-transparent text-xs focus:outline-none border-b border-dashed border-[#D8E4EC] focus:border-[#6D99F2] ${t.done ? 'line-through text-[#7A8FA3]' : 'text-[#263746]'}`}
-              value={t.text}
-              onChange={e => updateTodo(app.id, t.id, 'text', e.target.value)}
-              placeholder="e.g. Send thank-you email"
-            />
-            <button onClick={() => removeTodo(app.id, t.id)} className="text-[#D8E4EC] hover:text-[#FF5E5B] cursor-pointer transition-colors"><Trash2 size={13} /></button>
-          </div>
         ))}
-        {(app.todos || []).length === 0 && (
-          <div className="flex flex-wrap gap-2 mt-2">
-            {['Tailor resume', 'Write cover letter', 'Research company', 'Connect on LinkedIn', 'Send thank-you email', 'Prepare for interview'].map(t => (
-              <button key={t} onClick={() => quickAddTodo(app.id, t)} className="text-xs px-2.5 py-1 rounded-full bg-[#EEF3FA] text-[#4A5C6B] hover:bg-[#263746] hover:text-white cursor-pointer transition-colors">
-                + {t}
-              </button>
-            ))}
-          </div>
-        )}
       </div>
 
-      {/* Salary & Offer */}
-      <div className="mt-4 pt-4 border-t border-[#EEF3FA]">
-        <p className="text-xs font-semibold text-[#4A5C6B] uppercase tracking-wide mb-3">Salary & Offer</p>
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-          <div>
-            <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Advertised Salary</label>
-            <input className={inputCls} value={app.salaryAdvertised || ''} onChange={e => updateApp(app.id, 'salaryAdvertised', e.target.value)} placeholder="e.g. $90,000" />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Your Target Salary</label>
-            <input className={inputCls} value={app.salaryTarget || ''} onChange={e => updateApp(app.id, 'salaryTarget', e.target.value)} placeholder="e.g. $105,000" />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Highest $ You'd Accept</label>
-            <input className={inputCls} value={app.salaryHighest || ''} onChange={e => updateApp(app.id, 'salaryHighest', e.target.value)} placeholder="e.g. $110,000" />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Lowest $ You'd Accept</label>
-            <input className={inputCls} value={app.salaryLowest || ''} onChange={e => updateApp(app.id, 'salaryLowest', e.target.value)} placeholder="e.g. $85,000" />
-          </div>
-          <div className="col-span-2">
-            <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Non-Financial Value</label>
-            <input className={inputCls} value={app.salaryNonFinancial || ''} onChange={e => updateApp(app.id, 'salaryNonFinancial', e.target.value)} placeholder="e.g. Flexible WFH, extra leave, career progression" />
-          </div>
-        </div>
-        {(app.status === 'Offer Received' || app.offerAmount || app.offerDate) && (
-          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
-            <p className="text-xs font-bold text-emerald-800 uppercase tracking-wide mb-3">Offer Details</p>
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+      <div className="px-5 py-5">
+
+        {/* ── DETAILS TAB ── */}
+        {tab === 'details' && (
+          <div className="space-y-5">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs font-medium text-emerald-700 mb-1">Offer Date</label>
-                <input className="w-full border border-emerald-200 rounded-lg px-2 py-1.5 text-xs bg-white text-[#263746] focus:outline-none" type="date" value={app.offerDate || ''} onChange={e => updateApp(app.id, 'offerDate', e.target.value)} />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-emerald-700 mb-1">Offered Amount</label>
-                <input className="w-full border border-emerald-200 rounded-lg px-2 py-1.5 text-xs bg-white text-[#263746] focus:outline-none" value={app.offerAmount || ''} onChange={e => updateApp(app.id, 'offerAmount', e.target.value)} placeholder="e.g. $95,000" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-emerald-700 mb-1">Deadline to Decide</label>
-                <input className="w-full border border-emerald-200 rounded-lg px-2 py-1.5 text-xs bg-white text-[#263746] focus:outline-none" type="date" value={app.offerDeadline || ''} onChange={e => updateApp(app.id, 'offerDeadline', e.target.value)} />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-emerald-700 mb-1">Decision</label>
-                <select className="w-full border border-emerald-200 rounded-lg px-2 py-1.5 text-xs bg-white text-[#263746] focus:outline-none" value={app.offerDecision || ''} onChange={e => updateApp(app.id, 'offerDecision', e.target.value)}>
-                  <option value="">Not decided</option>
-                  <option value="Accept">Accept</option>
-                  <option value="Negotiate">Negotiate</option>
-                  <option value="Decline">Decline</option>
+                <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Status</label>
+                <select className={inputCls} value={app.status} onChange={e => updateApp(app.id, 'status', e.target.value)}>
+                  {STATUS_OPTIONS.map(s => <option key={s}>{s}</option>)}
                 </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Job Role</label>
+                <input className={inputCls} value={app.jobRole} onChange={e => updateApp(app.id, 'jobRole', e.target.value)} placeholder="e.g. Senior Product Manager" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Company</label>
+                <input className={inputCls} value={app.company} onChange={e => updateApp(app.id, 'company', e.target.value)} placeholder="Company name" />
               </div>
               <div className="col-span-2">
-                <label className="block text-xs font-medium text-emerald-700 mb-1">Negotiation Notes</label>
-                <input className="w-full border border-emerald-200 rounded-lg px-2 py-1.5 text-xs bg-white text-[#263746] focus:outline-none placeholder:text-[#7A8FA3]" value={app.offerNotes || ''} onChange={e => updateApp(app.id, 'offerNotes', e.target.value)} placeholder="Negotiation strategy, counter offer, notes..." />
+                <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Job Listing URL</label>
+                <div className="flex gap-1.5">
+                  <input className={`${inputCls} flex-1`} type="url" value={app.jobUrl || ''} onChange={e => updateApp(app.id, 'jobUrl', e.target.value)} placeholder="Paste the link to the job posting" />
+                  {app.jobUrl && <a href={app.jobUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-xs text-white bg-[#6D99F2] hover:bg-[#263746] px-3 rounded-lg transition-colors flex-shrink-0"><ExternalLink size={12} /> View</a>}
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Found via</label>
+                <select className={inputCls} value={app.source || ''} onChange={e => updateApp(app.id, 'source', e.target.value)}>
+                  {SOURCE_OPTIONS.map(o => <option key={o} value={o}>{o || 'Select source'}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Work Type</label>
+                <select className={inputCls} value={app.workType || ''} onChange={e => updateApp(app.id, 'workType', e.target.value)}>
+                  {WORK_TYPES.map(o => <option key={o} value={o}>{o || 'Select work type'}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Location / City</label>
+                <input className={inputCls} value={app.location || ''} onChange={e => updateApp(app.id, 'location', e.target.value)} placeholder="e.g. Sydney, Melbourne" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Close Date</label>
+                <input className={inputCls} type="date" value={app.closeDate} onChange={e => updateApp(app.id, 'closeDate', e.target.value)} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Submitted Date</label>
+                <input className={inputCls} type="date" value={app.submittedDate} onChange={e => updateApp(app.id, 'submittedDate', e.target.value)} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Follow-up Date</label>
+                <input className={`${inputCls} ${followUpOverdue ? 'border-red-400 text-red-600' : ''}`} type="date" value={app.followUpDate || ''} onChange={e => updateApp(app.id, 'followUpDate', e.target.value)} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Resume Used</label>
+                <select className={inputCls} value={app.selectedResume || ''} onChange={e => updateApp(app.id, 'selectedResume', e.target.value)}>
+                  {resumeOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </div>
+              <div className="col-span-2 lg:col-span-3">
+                <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Why this role?</label>
+                <textarea className={inputCls} rows={2} value={app.why} onChange={e => updateApp(app.id, 'why', e.target.value)} placeholder="Your motivation for applying" />
+              </div>
+            </div>
+
+            {/* Salary */}
+            <div className="pt-4 border-t border-[#EEF3FA]">
+              <p className="text-xs font-semibold text-[#4A5C6B] uppercase tracking-wide mb-3">Salary</p>
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Advertised Salary</label>
+                  <input className={inputCls} value={app.salaryAdvertised || ''} onChange={e => updateApp(app.id, 'salaryAdvertised', e.target.value)} placeholder="e.g. $90,000" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Your Target Salary</label>
+                  <input className={inputCls} value={app.salaryTarget || ''} onChange={e => updateApp(app.id, 'salaryTarget', e.target.value)} placeholder="e.g. $105,000" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Highest You'd Accept</label>
+                  <input className={inputCls} value={app.salaryHighest || ''} onChange={e => updateApp(app.id, 'salaryHighest', e.target.value)} placeholder="e.g. $110,000" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Lowest You'd Accept</label>
+                  <input className={inputCls} value={app.salaryLowest || ''} onChange={e => updateApp(app.id, 'salaryLowest', e.target.value)} placeholder="e.g. $85,000" />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Non-Financial Value</label>
+                  <input className={inputCls} value={app.salaryNonFinancial || ''} onChange={e => updateApp(app.id, 'salaryNonFinancial', e.target.value)} placeholder="e.g. Flexible WFH, extra leave, career progression" />
+                </div>
+              </div>
+            </div>
+
+            {/* HM / Recruiter */}
+            <div className="pt-4 border-t border-[#EEF3FA]">
+              <p className="text-xs font-semibold text-[#4A5C6B] uppercase tracking-wide mb-3">HM / Recruiter</p>
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="flex items-center gap-2">
+                  <input type="checkbox" id={`hm-${app.id}`} checked={app.connectedHM} onChange={e => updateApp(app.id, 'connectedHM', e.target.checked)} className="accent-[#263746]" />
+                  <label htmlFor={`hm-${app.id}`} className="text-xs text-[#4A5C6B]">Connected with HM/Recruiter</label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input type="checkbox" id={`msg-${app.id}`} checked={app.connectionMsg} onChange={e => updateApp(app.id, 'connectionMsg', e.target.checked)} className="accent-[#263746]" />
+                  <label htmlFor={`msg-${app.id}`} className="text-xs text-[#4A5C6B]">Connection message sent</label>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-[#4A5C6B] mb-1">HM/Recruiter Contact</label>
+                  <input className={inputCls} value={app.hmContact} onChange={e => updateApp(app.id, 'hmContact', e.target.value)} placeholder="Email or LinkedIn" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-[#4A5C6B] mb-1">HM/Recruiter Role</label>
+                  <input className={inputCls} value={app.hmRole} onChange={e => updateApp(app.id, 'hmRole', e.target.value)} placeholder="e.g. Hiring Manager" />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Conversation Notes</label>
+                  <textarea className={inputCls} rows={2} value={app.notes} onChange={e => updateApp(app.id, 'notes', e.target.value)} placeholder="Notes from your conversation" />
+                </div>
               </div>
             </div>
           </div>
         )}
+
+        {/* ── BLUEPRINT TAB ── */}
+        {tab === 'blueprint' && (
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="text-sm font-semibold text-[#263746] mb-0.5">Blueprint Alignment</p>
+                <p className="text-xs text-[#7A8FA3]">Rate how well this role matches your Career Blueprint (1 = poor, 5 = perfect)</p>
+              </div>
+              {(() => {
+                const { total, max, pct, color } = getAlignmentMeta(app.blueprintRatings)
+                if (total === 0) return null
+                const textColor = color === 'emerald' ? 'text-emerald-600' : color === 'amber' ? 'text-amber-600' : 'text-[#FF5E5B]'
+                const verdict = pct >= 0.7 ? 'Strong fit' : pct >= 0.4 ? 'Partial fit' : 'Weak fit'
+                return (
+                  <div className="text-right">
+                    <p className={`text-sm font-bold ${textColor}`}>{total}/{max}</p>
+                    <p className={`text-[10px] font-medium ${textColor}`}>{verdict}</p>
+                  </div>
+                )
+              })()}
+            </div>
+            {(() => {
+              const { pct, color, total } = getAlignmentMeta(app.blueprintRatings)
+              const fillColor = color === 'emerald' ? 'bg-emerald-500' : color === 'amber' ? 'bg-amber-400' : 'bg-[#FF5E5B]'
+              return total > 0 ? (
+                <div className="w-full h-3 bg-[#EEF3FA] rounded-full overflow-hidden mb-4 border border-[#D8E4EC]">
+                  <div className={`h-full rounded-full transition-all duration-300 ${fillColor}`} style={{ width: `${pct * 100}%` }} />
+                </div>
+              ) : null
+            })()}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              {BP_CATEGORIES.map(({ key, label }) => (
+                <div key={key} className="relative group">
+                  <label className="flex items-center gap-1 text-[10px] font-medium text-[#4A5C6B] mb-1 cursor-default">
+                    {label}
+                    <Info size={10} className="text-[#7A8FA3] flex-shrink-0" />
+                  </label>
+                  <div className="absolute bottom-full left-0 mb-1.5 z-20 w-56 bg-[#263746] text-white text-[11px] rounded-lg px-3 py-2.5 hidden group-hover:block shadow-xl pointer-events-none">
+                    {blueprint[key] ? blueprint[key] : <span className="italic text-white/50">Not filled in yet — go to My Profile to add this.</span>}
+                    <div className="absolute top-full left-4 border-4 border-transparent border-t-[#263746]" />
+                  </div>
+                  <select className={inputCls} value={app.blueprintRatings?.[key] ?? ''} onChange={e => updateRating(app.id, key, e.target.value)}>
+                    <option value="">--</option>
+                    <option value="1">1 — Poor</option>
+                    <option value="2">2 — Low</option>
+                    <option value="3">3 — Okay</option>
+                    <option value="4">4 — Good</option>
+                    <option value="5">5 — Perfect</option>
+                  </select>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── ACTIVITY TAB ── */}
+        {tab === 'activity' && (
+          <div className="space-y-5">
+            {/* To-Do */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-semibold text-[#263746]">To-Do</p>
+                <button onClick={() => addTodo(app.id)} className="flex items-center gap-1 text-xs text-[#6D99F2] hover:text-[#263746] cursor-pointer font-medium transition-colors">
+                  <Plus size={12} /> Add task
+                </button>
+              </div>
+              {(app.todos || []).length === 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {['Tailor resume', 'Write cover letter', 'Research company', 'Connect on LinkedIn', 'Send thank-you email', 'Prepare for interview'].map(t => (
+                    <button key={t} onClick={() => quickAddTodo(app.id, t)} className="text-xs px-2.5 py-1 rounded-full bg-[#EEF3FA] text-[#4A5C6B] hover:bg-[#263746] hover:text-white cursor-pointer transition-colors">
+                      + {t}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div>
+                  {(app.todos || []).map(t => (
+                    <div key={t.id} className="flex items-center gap-2 py-1.5">
+                      <input type="checkbox" checked={t.done} onChange={e => updateTodo(app.id, t.id, 'done', e.target.checked)} className="accent-[#263746]" />
+                      <input
+                        className={`flex-1 bg-transparent text-xs focus:outline-none border-b border-dashed border-[#D8E4EC] focus:border-[#6D99F2] ${t.done ? 'line-through text-[#7A8FA3]' : 'text-[#263746]'}`}
+                        value={t.text}
+                        onChange={e => updateTodo(app.id, t.id, 'text', e.target.value)}
+                        placeholder="e.g. Send thank-you email"
+                      />
+                      <button onClick={() => removeTodo(app.id, t.id)} className="text-[#D8E4EC] hover:text-[#FF5E5B] cursor-pointer transition-colors"><Trash2 size={13} /></button>
+                    </div>
+                  ))}
+                  <button onClick={() => addTodo(app.id)} className="mt-2 text-xs text-[#7A8FA3] hover:text-[#4A5C6B] cursor-pointer transition-colors">
+                    + Add another task
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Outreach Log */}
+            <div className="pt-5 border-t border-[#EEF3FA]">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-semibold text-[#263746]">Outreach Log</p>
+                <button onClick={() => addOutreach(app.id)} className="flex items-center gap-1 text-xs text-[#6D99F2] hover:text-[#263746] cursor-pointer font-medium transition-colors">
+                  <Plus size={12} /> Log interaction
+                </button>
+              </div>
+              {(app.outreachLog || []).length === 0 ? (
+                <p className="text-xs text-[#7A8FA3]">No outreach logged yet. Track every call, email and message here.</p>
+              ) : (
+                <div className="space-y-2">
+                  {[...(app.outreachLog || [])].sort((a, b) => b.date.localeCompare(a.date)).map(o => (
+                    <div key={o.id} className="grid grid-cols-[auto_auto_1fr_auto] gap-2 items-center bg-[#F8F5F2] rounded-lg px-3 py-2">
+                      <input className="border border-[#D8E4EC] rounded px-2 py-1 text-xs bg-white focus:outline-none w-28 flex-shrink-0" type="date" value={o.date} onChange={e => updateOutreach(app.id, o.id, 'date', e.target.value)} />
+                      <select className="border border-[#D8E4EC] rounded px-2 py-1 text-xs bg-white focus:outline-none flex-shrink-0" value={o.type} onChange={e => updateOutreach(app.id, o.id, 'type', e.target.value)}>
+                        {OUTREACH_TYPES.map(t => <option key={t}>{t}</option>)}
+                      </select>
+                      <input className="bg-transparent text-xs text-[#263746] focus:outline-none border-b border-dashed border-[#D8E4EC] focus:border-[#6D99F2] placeholder:text-[#7A8FA3] min-w-0" value={o.notes} onChange={e => updateOutreach(app.id, o.id, 'notes', e.target.value)} placeholder="What happened? Any response?" />
+                      <button onClick={() => removeOutreach(app.id, o.id)} className="text-[#D8E4EC] hover:text-[#FF5E5B] transition-colors cursor-pointer flex-shrink-0"><Trash2 size={13} /></button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ── INTERVIEW TAB ── */}
+        {tab === 'interview' && (
+          <div className="space-y-5">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Interview Date</label>
+                <input className={inputCls} type="date" value={app.interviewDate} onChange={e => updateApp(app.id, 'interviewDate', e.target.value)} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Interview Stage</label>
+                <input className={inputCls} value={app.interviewStage} onChange={e => updateApp(app.id, 'interviewStage', e.target.value)} placeholder="e.g. First round" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Outcome</label>
+                <select className={inputCls} value={app.outcome} onChange={e => updateApp(app.id, 'outcome', e.target.value)}>
+                  {OUTCOME_OPTIONS.map(o => <option key={o}>{o}</option>)}
+                </select>
+              </div>
+              <div className="flex items-center gap-2">
+                <input type="checkbox" id={`prep-${app.id}`} checked={app.prepDone} onChange={e => updateApp(app.id, 'prepDone', e.target.checked)} className="accent-[#263746]" />
+                <label htmlFor={`prep-${app.id}`} className="text-xs text-[#4A5C6B]">Interview prep completed</label>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Interview Outcome</label>
+                <input className={inputCls} value={app.interviewOutcome} onChange={e => updateApp(app.id, 'interviewOutcome', e.target.value)} placeholder="e.g. Progressed to next round" />
+              </div>
+              <div className="col-span-2 lg:col-span-3">
+                <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Additional Notes</label>
+                <textarea className={inputCls} rows={2} value={app.additionalNotes} onChange={e => updateApp(app.id, 'additionalNotes', e.target.value)} placeholder="Anything else" />
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-[#EEF3FA]">
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                <p className="text-xs font-bold text-amber-800 uppercase tracking-wide mb-2">Feedback</p>
+                <textarea
+                  className="w-full border border-amber-200 rounded-lg px-3 py-2 text-sm text-[#263746] focus:outline-none focus:ring-2 focus:ring-amber-300/40 bg-white placeholder:text-[#7A8FA3] resize-none"
+                  rows={3}
+                  value={app.feedback}
+                  onChange={e => updateApp(app.id, 'feedback', e.target.value)}
+                  placeholder="What feedback did you receive? What would you do differently?"
+                />
+              </div>
+            </div>
+
+            {(app.status === 'Offer Received' || app.offerAmount || app.offerDate) && (
+              <div className="pt-4 border-t border-[#EEF3FA]">
+                <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+                  <p className="text-xs font-bold text-emerald-800 uppercase tracking-wide mb-3">Offer Details</p>
+                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-emerald-700 mb-1">Offer Date</label>
+                      <input className="w-full border border-emerald-200 rounded-lg px-2 py-1.5 text-xs bg-white text-[#263746] focus:outline-none" type="date" value={app.offerDate || ''} onChange={e => updateApp(app.id, 'offerDate', e.target.value)} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-emerald-700 mb-1">Offered Amount</label>
+                      <input className="w-full border border-emerald-200 rounded-lg px-2 py-1.5 text-xs bg-white text-[#263746] focus:outline-none" value={app.offerAmount || ''} onChange={e => updateApp(app.id, 'offerAmount', e.target.value)} placeholder="e.g. $95,000" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-emerald-700 mb-1">Deadline to Decide</label>
+                      <input className="w-full border border-emerald-200 rounded-lg px-2 py-1.5 text-xs bg-white text-[#263746] focus:outline-none" type="date" value={app.offerDeadline || ''} onChange={e => updateApp(app.id, 'offerDeadline', e.target.value)} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-emerald-700 mb-1">Decision</label>
+                      <select className="w-full border border-emerald-200 rounded-lg px-2 py-1.5 text-xs bg-white text-[#263746] focus:outline-none" value={app.offerDecision || ''} onChange={e => updateApp(app.id, 'offerDecision', e.target.value)}>
+                        <option value="">Not decided</option>
+                        <option value="Accept">Accept</option>
+                        <option value="Negotiate">Negotiate</option>
+                        <option value="Decline">Decline</option>
+                      </select>
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block text-xs font-medium text-emerald-700 mb-1">Negotiation Notes</label>
+                      <input className="w-full border border-emerald-200 rounded-lg px-2 py-1.5 text-xs bg-white text-[#263746] focus:outline-none placeholder:text-[#7A8FA3]" value={app.offerNotes || ''} onChange={e => updateApp(app.id, 'offerNotes', e.target.value)} placeholder="Negotiation strategy, counter offer, notes..." />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── DOCUMENTS TAB ── */}
+        {tab === 'documents' && (
+          <div className="space-y-5">
+            <div>
+              <label className="block text-xs font-semibold text-[#4A5C6B] uppercase tracking-wide mb-2">Job Description</label>
+              <textarea
+                className={`${inputCls} resize-none`}
+                rows={9}
+                value={app.jobDescription || ''}
+                onChange={e => updateApp(app.id, 'jobDescription', e.target.value)}
+                placeholder="Paste the full job description here — useful for tailoring your resume and prep..."
+              />
+            </div>
+            <div className="pt-4 border-t border-[#EEF3FA]">
+              <p className="text-xs font-semibold text-[#4A5C6B] uppercase tracking-wide mb-3">Files</p>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <FileUpload label="Resume" value={app.resumeFile} onChange={file => updateApp(app.id, 'resumeFile', file)} />
+                  <div className="flex items-center gap-2"><div className="h-px flex-1 bg-[#D8E4EC]" /><span className="text-[10px] text-[#7A8FA3]">or link</span><div className="h-px flex-1 bg-[#D8E4EC]" /></div>
+                  <div className="flex gap-1.5">
+                    <input className={`${inputCls} flex-1`} type="url" value={app.resumeLink} onChange={e => updateApp(app.id, 'resumeLink', e.target.value)} placeholder="Paste Drive link" />
+                    {app.resumeLink && <a href={app.resumeLink} target="_blank" rel="noreferrer" className="text-[#6D99F2] hover:text-[#263746]"><ExternalLink size={16} /></a>}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <FileUpload label="Cover Letter" value={app.coverLetterFile} onChange={file => updateApp(app.id, 'coverLetterFile', file)} />
+                  <div className="flex items-center gap-2"><div className="h-px flex-1 bg-[#D8E4EC]" /><span className="text-[10px] text-[#7A8FA3]">or link</span><div className="h-px flex-1 bg-[#D8E4EC]" /></div>
+                  <div className="flex gap-1.5">
+                    <input className={`${inputCls} flex-1`} type="url" value={app.coverLetterLink} onChange={e => updateApp(app.id, 'coverLetterLink', e.target.value)} placeholder="Paste Drive link" />
+                    {app.coverLetterLink && <a href={app.coverLetterLink} target="_blank" rel="noreferrer" className="text-[#6D99F2] hover:text-[#263746]"><ExternalLink size={16} /></a>}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   )
@@ -423,6 +488,9 @@ export default function RoleTracker() {
   const [expanded, setExpanded] = useState(null)
   const [viewMode, setViewMode] = useState('cards')
   const [dragId, setDragId] = useState(null)
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [sortBy, setSortBy] = useState('newest')
   const apps = data.applications || []
   const resumeVersions = data.resumeVersions || []
   const blueprint = data.blueprint || {}
@@ -483,6 +551,24 @@ export default function RoleTracker() {
     'Offer': apps.filter(a => a.status === 'Offer Received').length,
   }
 
+  // Filter & sort
+  let displayed = apps
+  if (search.trim()) {
+    const q = search.toLowerCase()
+    displayed = displayed.filter(a =>
+      (a.company || '').toLowerCase().includes(q) ||
+      (a.jobRole || '').toLowerCase().includes(q) ||
+      (a.location || '').toLowerCase().includes(q)
+    )
+  }
+  if (statusFilter === 'active') displayed = displayed.filter(a => ACTIVE_STATUSES.includes(a.status))
+  if (statusFilter === 'closed') displayed = displayed.filter(a => !ACTIVE_STATUSES.includes(a.status))
+  if (sortBy === 'newest') displayed = [...displayed].sort((a, b) => b.id - a.id)
+  else if (sortBy === 'oldest') displayed = [...displayed].sort((a, b) => a.id - b.id)
+  else if (sortBy === 'company') displayed = [...displayed].sort((a, b) => (a.company || '').localeCompare(b.company || ''))
+  else if (sortBy === 'closedate') displayed = [...displayed].sort((a, b) => (a.closeDate || '9999-99-99').localeCompare(b.closeDate || '9999-99-99'))
+
+  const today = new Date().toISOString().slice(0, 10)
   const formProps = { blueprint, resumeOptions, updateApp, updateRating, addOutreach, updateOutreach, removeOutreach, addTodo, updateTodo, removeTodo, quickAddTodo }
 
   return (
@@ -519,6 +605,40 @@ export default function RoleTracker() {
         </div>
       )}
 
+      {/* Search + filter bar */}
+      {apps.length > 0 && viewMode !== 'kanban' && (
+        <div className="flex flex-wrap items-center gap-3 mb-4">
+          <div className="relative flex-1 min-w-[180px] max-w-xs">
+            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7A8FA3]" />
+            <input
+              className="w-full border border-[#D8E4EC] rounded-lg pl-8 pr-3 py-2 text-xs text-[#263746] focus:outline-none focus:ring-2 focus:ring-[#6D99F2]/40 bg-white placeholder:text-[#7A8FA3]"
+              placeholder="Search company or role..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+          </div>
+          <div className="flex items-center gap-1.5">
+            {[['all', 'All'], ['active', 'Active'], ['closed', 'Closed']].map(([v, l]) => (
+              <button key={v} onClick={() => setStatusFilter(v)} className={`px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-colors ${statusFilter === v ? 'bg-[#263746] text-white' : 'bg-white border border-[#D8E4EC] text-[#4A5C6B] hover:bg-[#EEF3FA]'}`}>{l}</button>
+            ))}
+          </div>
+          <select
+            className="border border-[#D8E4EC] rounded-lg px-3 py-2 text-xs text-[#4A5C6B] bg-white focus:outline-none cursor-pointer"
+            value={sortBy}
+            onChange={e => setSortBy(e.target.value)}
+          >
+            <option value="newest">Newest first</option>
+            <option value="oldest">Oldest first</option>
+            <option value="company">Company A→Z</option>
+            <option value="closedate">Close date</option>
+          </select>
+          {(search || statusFilter !== 'all') && (
+            <span className="text-xs text-[#7A8FA3]">{displayed.length} of {apps.length}</span>
+          )}
+        </div>
+      )}
+
+      {/* Empty state */}
       {apps.length === 0 && (
         <div className="bg-white rounded-xl border border-[#D8E4EC] p-10 text-center">
           <div className="text-4xl mb-3">📋</div>
@@ -548,15 +668,11 @@ export default function RoleTracker() {
                     onDragOver={e => e.preventDefault()}
                     onDrop={e => { e.preventDefault(); if (dragId) { updateApp(dragId, 'status', colStatus); setDragId(null) } }}
                   >
-                    {/* Column header */}
                     <div className="flex items-center justify-between mb-2 px-1">
                       <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${colColor}`}>{colStatus}</span>
                       <span className="text-xs font-bold text-[#7A8FA3] bg-[#EEF3FA] rounded-full px-2 py-0.5">{colApps.length}</span>
                     </div>
-                    {/* Column body */}
-                    <div
-                      className={`min-h-[300px] flex-1 rounded-xl p-2 flex flex-col gap-2 transition-colors ${isDragOver ? 'border-2 border-[#6D99F2]/40 bg-[#F8FBFD]' : 'bg-[#F8FBFD] border-2 border-transparent'}`}
-                    >
+                    <div className={`min-h-[300px] flex-1 rounded-xl p-2 flex flex-col gap-2 transition-colors ${isDragOver ? 'border-2 border-[#6D99F2]/40 bg-[#F8FBFD]' : 'bg-[#F8FBFD] border-2 border-transparent'}`}>
                       {colApps.map(app => (
                         <div
                           key={app.id}
@@ -565,26 +681,16 @@ export default function RoleTracker() {
                           onDragEnd={() => setDragId(null)}
                           className="bg-white rounded-lg border border-[#D8E4EC] px-3 py-2.5 cursor-grab active:cursor-grabbing hover:shadow-sm transition-shadow group"
                         >
-                          <div
-                            className="cursor-pointer"
-                            onClick={() => { setViewMode('cards'); setExpanded(app.id) }}
-                          >
+                          <div className="cursor-pointer" onClick={() => { setViewMode('cards'); setExpanded(app.id) }}>
                             <p className="text-xs font-bold text-[#263746] truncate">{app.company || 'Untitled company'}</p>
                             <p className="text-[10px] text-[#7A8FA3] truncate mt-0.5">{app.jobRole || 'No role'}</p>
                             <div className="flex items-center gap-1.5 mt-2 flex-wrap">
-                              {app.workType && (
-                                <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${WORK_TYPE_COLORS[app.workType] || ''}`}>{app.workType}</span>
-                              )}
+                              {app.workType && <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${WORK_TYPE_COLORS[app.workType] || ''}`}>{app.workType}</span>}
                               <AlignmentPill ratings={app.blueprintRatings} />
                             </div>
                           </div>
                           <div className="flex justify-end mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button
-                              onClick={e => { e.stopPropagation(); removeApp(app.id) }}
-                              className="text-[#FF5E5B] hover:text-red-700 cursor-pointer"
-                            >
-                              <Trash2 size={11} />
-                            </button>
+                            <button onClick={e => { e.stopPropagation(); removeApp(app.id) }} className="text-[#FF5E5B] hover:text-red-700 cursor-pointer"><Trash2 size={11} /></button>
                           </div>
                         </div>
                       ))}
@@ -593,7 +699,6 @@ export default function RoleTracker() {
                 )
               })}
             </div>
-            {/* Closed section */}
             {closedApps.length > 0 && (
               <div className="mt-6">
                 <p className="text-xs font-semibold text-[#7A8FA3] uppercase tracking-wide mb-3">Closed ({closedApps.length})</p>
@@ -606,29 +711,19 @@ export default function RoleTracker() {
                       onDragEnd={() => setDragId(null)}
                       className="bg-white rounded-lg border border-[#D8E4EC] px-3 py-2.5 w-[220px] cursor-grab active:cursor-grabbing hover:shadow-sm transition-shadow group"
                     >
-                      <div
-                        className="cursor-pointer"
-                        onClick={() => { setViewMode('cards'); setExpanded(app.id) }}
-                      >
+                      <div className="cursor-pointer" onClick={() => { setViewMode('cards'); setExpanded(app.id) }}>
                         <div className="flex items-center gap-1.5 mb-1">
                           <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${STATUS_COLORS[app.status] || 'bg-[#F5F9FD] text-[#7A8FA3]'}`}>{app.status}</span>
                         </div>
                         <p className="text-xs font-bold text-[#263746] truncate">{app.company || 'Untitled company'}</p>
                         <p className="text-[10px] text-[#7A8FA3] truncate mt-0.5">{app.jobRole || 'No role'}</p>
                         <div className="flex items-center gap-1.5 mt-2 flex-wrap">
-                          {app.workType && (
-                            <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${WORK_TYPE_COLORS[app.workType] || ''}`}>{app.workType}</span>
-                          )}
+                          {app.workType && <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${WORK_TYPE_COLORS[app.workType] || ''}`}>{app.workType}</span>}
                           <AlignmentPill ratings={app.blueprintRatings} />
                         </div>
                       </div>
                       <div className="flex justify-end mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={e => { e.stopPropagation(); removeApp(app.id) }}
-                          className="text-[#FF5E5B] hover:text-red-700 cursor-pointer"
-                        >
-                          <Trash2 size={11} />
-                        </button>
+                        <button onClick={e => { e.stopPropagation(); removeApp(app.id) }} className="text-[#FF5E5B] hover:text-red-700 cursor-pointer"><Trash2 size={11} /></button>
                       </div>
                     </div>
                   ))}
@@ -642,35 +737,52 @@ export default function RoleTracker() {
       {/* Card view */}
       {viewMode === 'cards' && (
         <div className="space-y-3">
-          {apps.map((app) => (
-            <div key={app.id} className={`bg-white rounded-xl overflow-hidden border-2 ${app.vibe === 'green' ? 'border-emerald-400' : app.vibe === 'amber' ? 'border-amber-400' : app.vibe === 'red' ? 'border-red-400' : 'border-[#D8E4EC]'}`}>
-              <div className="flex items-center gap-4 px-5 py-4 cursor-pointer hover:bg-[#F5F9FD]" onClick={() => setExpanded(expanded === app.id ? null : app.id)}>
-                <div className="flex gap-1 flex-shrink-0" onClick={e => e.stopPropagation()}>
-                  {[['green', '🟢'], ['amber', '🟡'], ['red', '🔴']].map(([v, emoji]) => (
-                    <button key={v} onClick={() => updateApp(app.id, 'vibe', app.vibe === v ? '' : v)} className={`text-sm transition-all cursor-pointer ${app.vibe === v ? 'opacity-100 scale-110' : 'opacity-25 hover:opacity-60'}`}>{emoji}</button>
-                  ))}
-                </div>
-                <span className={`text-xs font-medium px-2.5 py-1 rounded-full flex-shrink-0 ${STATUS_COLORS[app.status] || 'bg-[#F5F9FD] text-[#7A8FA3]'}`}>{app.status}</span>
-                {app.workType && <span className={`text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0 ${WORK_TYPE_COLORS[app.workType] || ''}`}>{app.workType}</span>}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-semibold text-[#263746] truncate">{app.company || 'Untitled company'}</p>
-                    {app.jobUrl && <a href={app.jobUrl} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} className="text-[#6D99F2] hover:text-[#263746] flex-shrink-0"><ExternalLink size={12} /></a>}
+          {displayed.map((app) => {
+            const daysUntilClose = app.closeDate ? Math.ceil((new Date(app.closeDate) - new Date(today)) / 86400000) : null
+            const closeWarning = daysUntilClose !== null && daysUntilClose >= 0 && daysUntilClose <= 5
+            return (
+              <div key={app.id} className={`bg-white rounded-xl overflow-hidden border-2 ${app.vibe === 'green' ? 'border-emerald-400' : app.vibe === 'amber' ? 'border-amber-400' : app.vibe === 'red' ? 'border-red-400' : 'border-[#D8E4EC]'}`}>
+                <div className="flex items-center gap-3 px-5 py-4 cursor-pointer hover:bg-[#F5F9FD] transition-colors" onClick={() => setExpanded(expanded === app.id ? null : app.id)}>
+                  <div className="flex gap-1 flex-shrink-0" onClick={e => e.stopPropagation()}>
+                    {[['green', '🟢'], ['amber', '🟡'], ['red', '🔴']].map(([v, emoji]) => (
+                      <button key={v} onClick={() => updateApp(app.id, 'vibe', app.vibe === v ? '' : v)} className={`text-sm transition-all cursor-pointer ${app.vibe === v ? 'opacity-100 scale-110' : 'opacity-25 hover:opacity-60'}`}>{emoji}</button>
+                    ))}
                   </div>
-                  <p className="text-xs text-[#7A8FA3] truncate">{app.jobRole || 'No role selected'}{app.location ? ` · ${app.location}` : ''}</p>
+                  <span className={`text-xs font-medium px-2.5 py-1 rounded-full flex-shrink-0 ${STATUS_COLORS[app.status] || 'bg-[#F5F9FD] text-[#7A8FA3]'}`}>{app.status}</span>
+                  {closeWarning && (
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-red-50 text-[#FF5E5B] border border-red-100 flex-shrink-0 hidden sm:inline">
+                      {daysUntilClose === 0 ? 'Closes today' : `Closes in ${daysUntilClose}d`}
+                    </span>
+                  )}
+                  {app.workType && (
+                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0 hidden md:inline ${WORK_TYPE_COLORS[app.workType] || ''}`}>{app.workType}</span>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-semibold text-[#263746] truncate">{app.company || 'Untitled company'}</p>
+                      {app.jobUrl && <a href={app.jobUrl} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} className="text-[#6D99F2] hover:text-[#263746] flex-shrink-0"><ExternalLink size={12} /></a>}
+                    </div>
+                    <p className="text-xs text-[#7A8FA3] truncate">{app.jobRole || 'No role selected'}{app.location ? ` · ${app.location}` : ''}</p>
+                  </div>
+                  {app.submittedDate && <span className="text-xs text-[#7A8FA3] flex-shrink-0 hidden lg:block">{app.submittedDate}</span>}
+                  <AlignmentPill ratings={app.blueprintRatings} />
+                  <button onClick={e => { e.stopPropagation(); removeApp(app.id) }} className="text-[#D8E4EC] hover:text-[#FF5E5B] flex-shrink-0 cursor-pointer transition-colors"><Trash2 size={14} /></button>
+                  <ChevronDown size={16} className={`text-[#7A8FA3] transition-transform flex-shrink-0 ${expanded === app.id ? 'rotate-180' : ''}`} />
                 </div>
-                {app.submittedDate && <span className="text-xs text-[#7A8FA3] flex-shrink-0">{app.submittedDate}</span>}
-                <AlignmentPill ratings={app.blueprintRatings} />
-                <button onClick={e => { e.stopPropagation(); removeApp(app.id) }} className="text-[#FF5E5B] hover:text-red-700 flex-shrink-0 cursor-pointer"><Trash2 size={14} /></button>
-                <ChevronDown size={16} className={`text-[#7A8FA3] transition-transform flex-shrink-0 ${expanded === app.id ? 'rotate-180' : ''}`} />
+                {expanded === app.id && (
+                  <div className="border-t border-[#EEF3FA]">
+                    <ExpandedForm app={app} {...formProps} />
+                  </div>
+                )}
               </div>
-              {expanded === app.id && (
-                <div className="border-t border-[#EEF3FA]">
-                  <ExpandedForm app={app} {...formProps} />
-                </div>
-              )}
+            )
+          })}
+          {displayed.length === 0 && apps.length > 0 && (
+            <div className="text-center py-10 bg-white rounded-xl border border-[#D8E4EC]">
+              <p className="text-[#7A8FA3] text-sm">No applications match your search.</p>
+              <button onClick={() => { setSearch(''); setStatusFilter('all') }} className="mt-2 text-xs text-[#6D99F2] hover:underline cursor-pointer">Clear filters</button>
             </div>
-          ))}
+          )}
         </div>
       )}
 
@@ -692,8 +804,7 @@ export default function RoleTracker() {
               </tr>
             </thead>
             <tbody>
-              {apps.map((app) => {
-                const today = new Date().toISOString().slice(0, 10)
+              {displayed.map((app) => {
                 const followUpOverdue = app.followUpDate && app.followUpDate < today && !app.followUpDone
                 const isExpanded = expanded === app.id
                 return (
@@ -719,7 +830,7 @@ export default function RoleTracker() {
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
                           <button onClick={() => setExpanded(isExpanded ? null : app.id)} className="text-[#7A8FA3] hover:text-[#263746] cursor-pointer transition-colors"><ChevronDown size={14} className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`} /></button>
-                          <button onClick={() => removeApp(app.id)} className="text-[#FF5E5B] hover:text-red-700 cursor-pointer"><Trash2 size={13} /></button>
+                          <button onClick={() => removeApp(app.id)} className="text-[#D8E4EC] hover:text-[#FF5E5B] cursor-pointer transition-colors"><Trash2 size={13} /></button>
                         </div>
                       </td>
                     </tr>
@@ -733,6 +844,14 @@ export default function RoleTracker() {
                   </>
                 )
               })}
+              {displayed.length === 0 && (
+                <tr>
+                  <td colSpan={9} className="px-4 py-8 text-center text-[#7A8FA3] text-xs">
+                    No applications match your search.{' '}
+                    <button onClick={() => { setSearch(''); setStatusFilter('all') }} className="text-[#6D99F2] hover:underline cursor-pointer">Clear filters</button>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
