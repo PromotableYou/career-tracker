@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useData } from '../context/DataContext'
-import { Plus, Trash2, ChevronDown, ExternalLink, Info } from 'lucide-react'
+import { Plus, Trash2, ChevronDown, ExternalLink, Info, Link } from 'lucide-react'
 import FileUpload from '../components/FileUpload'
 
 const STATUS_OPTIONS = ['Not Started', 'Researching', 'Applied', 'Awaiting Response', 'Interview Scheduled', 'Offer Received', 'Rejected', 'Withdrawn']
@@ -61,7 +61,7 @@ function AlignmentPill({ ratings }) {
 
 function newApp() {
   return {
-    id: Date.now(), status: 'Not Started', jobRole: '', company: '', alignment: '', why: '',
+    id: Date.now(), status: 'Not Started', jobRole: '', company: '', jobUrl: '', alignment: '', why: '',
     blueprintRatings: {}, selectedResume: '',
     connectedHM: false, connectionMsg: false, hmContact: '', hmRole: '',
     notes: '', resumeLink: '', coverLetterLink: '', closeDate: '', submittedDate: '',
@@ -162,7 +162,14 @@ export default function RoleTracker() {
                 {app.status}
               </span>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-[#263746] truncate">{app.company || 'Untitled company'}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-semibold text-[#263746] truncate">{app.company || 'Untitled company'}</p>
+                  {app.jobUrl && (
+                    <a href={app.jobUrl} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} className="text-[#6D99F2] hover:text-[#263746] flex-shrink-0" title="View job listing">
+                      <ExternalLink size={12} />
+                    </a>
+                  )}
+                </div>
                 <p className="text-xs text-[#7A8FA3] truncate">{app.jobRole || 'No role selected'}</p>
               </div>
               {app.submittedDate && <span className="text-xs text-[#7A8FA3] flex-shrink-0">{app.submittedDate}</span>}
@@ -189,6 +196,13 @@ export default function RoleTracker() {
                   <div>
                     <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Company</label>
                     <input className={inputCls} value={app.company} onChange={e => updateApp(app.id, 'company', e.target.value)} placeholder="Company name" />
+                  </div>
+                  <div className="col-span-2 lg:col-span-3">
+                    <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Job Listing URL</label>
+                    <div className="flex gap-1.5">
+                      <input className={`${inputCls} flex-1`} type="url" value={app.jobUrl || ''} onChange={e => updateApp(app.id, 'jobUrl', e.target.value)} placeholder="Paste the link to the job posting" />
+                      {app.jobUrl && <a href={app.jobUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-xs text-white bg-[#6D99F2] hover:bg-[#263746] px-3 rounded-lg transition-colors flex-shrink-0"><ExternalLink size={12} /> View</a>}
+                    </div>
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Close Date</label>
