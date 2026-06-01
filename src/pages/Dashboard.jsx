@@ -121,7 +121,6 @@ function getModulePrompts(applications, weeks) {
   if (totalApps >= 5 && !hasInterview) prompts.push({ icon: '🎤', module: 'Mastering Interviews', message: `${totalApps} applications in — are you interview-ready?` })
   if (hasInterview && !hasOffer) prompts.push({ icon: '🏆', module: 'Influential Interviews', message: 'Interview coming up — brush up on behavioural questions and your career overview.' })
   if (totalApps >= 10) prompts.push({ icon: '🧭', module: 'Career Blueprint Builder', message: `${totalApps} applications in — are you still targeting the right roles?` })
-  if (weeks >= 3 && totalApps < 3) prompts.push({ icon: '🚀', module: 'Winning Applicants Formula', message: 'A few weeks in but applications are low — revisit your momentum strategy.' })
   return prompts
 }
 
