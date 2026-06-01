@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { DataProvider, useData } from './context/DataContext'
 import CoachDashboard from './pages/CoachDashboard'
 import NoAccess from './pages/NoAccess'
+import Onboarding from './pages/Onboarding'
 import Dashboard from './pages/Dashboard'
 import Profile from './pages/Profile'
 import RoleTracker from './pages/RoleTracker'
@@ -14,10 +15,11 @@ import Offers from './pages/Offers'
 import Coaching from './pages/Coaching'
 import WeeklyCheckin from './pages/WeeklyCheckin'
 import Resumes from './pages/Resumes'
+import Events from './pages/Events'
 import {
   LayoutDashboard, User, Briefcase, Compass, Network,
   Link2, MessageSquare, DollarSign, Award, CalendarCheck,
-  ClipboardList, Menu, X, ChevronRight, FileText, Search
+  ClipboardList, Menu, X, ChevronRight, FileText, Search, GraduationCap
 } from 'lucide-react'
 import pyLogo from './assets/py-logo.png'
 
@@ -34,13 +36,14 @@ const NAV = [
   { id: 'offers', label: 'Offers', icon: Award },
   { id: 'coaching', label: 'Coaching Sessions', icon: CalendarCheck },
   { id: 'checkin', label: 'Weekly Check-In', icon: ClipboardList },
+  { id: 'events', label: 'Professional Dev', icon: GraduationCap },
 ]
 
 const PAGES = {
   dashboard: Dashboard, profile: Profile, resumes: Resumes, roles: RoleTracker,
   blueprint: Blueprint, networking: Networking, linkedin: LinkedIn,
   interviews: InterviewPrep, salary: Salary, offers: Offers,
-  coaching: Coaching, checkin: WeeklyCheckin,
+  coaching: Coaching, checkin: WeeklyCheckin, events: Events,
 }
 
 function EmbedLayout({ page, navigate, Page }) {
@@ -199,6 +202,11 @@ function AppInner() {
   }
 
   if (hasAccess === null) return <NoAccess />
+
+  const { data, updateNested } = useData()
+  if (!data.profile?.onboardingComplete) {
+    return <Onboarding onComplete={() => updateNested('profile', 'onboardingComplete', true)} />
+  }
 
   function navigate(id) {
     setPage(id)

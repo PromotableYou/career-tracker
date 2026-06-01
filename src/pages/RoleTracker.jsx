@@ -5,6 +5,7 @@ import FileUpload from '../components/FileUpload'
 
 const STATUS_OPTIONS = ['Not Started', 'Researching', 'Applied', 'Awaiting Response', 'Interview Scheduled', 'Offer Received', 'Rejected', 'Withdrawn']
 const OUTCOME_OPTIONS = ['', 'Progressing', 'Rejected', 'Offer', 'Withdrawn', 'Awaiting']
+const OUTREACH_TYPES = ['Call','Email','LinkedIn message','Received response']
 
 const STATUS_COLORS = {
   'Not Started': 'bg-[#F5F9FD] text-[#7A8FA3]',
@@ -67,6 +68,7 @@ function newApp() {
     followUpDate: '', followUpDone: false,
     outcome: '', interviewDate: '', interviewStage: '', prepDone: false,
     interviewOutcome: '', feedback: '', additionalNotes: '',
+    outreachLog: [],
   }
 }
 
@@ -103,6 +105,20 @@ export default function RoleTracker() {
   }
   function updateRating(id, catKey, value) {
     setApps(apps.map(a => a.id === id ? { ...a, blueprintRatings: { ...a.blueprintRatings, [catKey]: value } } : a))
+  }
+  function addOutreach(appId) {
+    const entry = { id: Date.now(), type: 'Email', date: new Date().toISOString().slice(0, 10), contact: '', notes: '' }
+    setApps(apps.map(a => a.id === appId ? { ...a, outreachLog: [...(a.outreachLog || []), entry] } : a))
+  }
+  function updateOutreach(appId, oId, field, value) {
+    setApps(apps.map(a => a.id !== appId ? a : {
+      ...a, outreachLog: (a.outreachLog || []).map(o => o.id === oId ? { ...o, [field]: value } : o)
+    }))
+  }
+  function removeOutreach(appId, oId) {
+    setApps(apps.map(a => a.id !== appId ? a : {
+      ...a, outreachLog: (a.outreachLog || []).filter(o => o.id !== oId)
+    }))
   }
 
   return (
@@ -378,6 +394,54 @@ export default function RoleTracker() {
                       <textarea className={inputCls} rows={2} value={app.additionalNotes} onChange={e => updateApp(app.id, 'additionalNotes', e.target.value)} placeholder="Anything else" />
                     </div>
                   </div>
+                </div>
+
+                {/* Outreach Log */}
+                <div className="mt-4 pt-4 border-t border-[#EEF3FA]">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-xs font-semibold text-[#4A5C6B] uppercase tracking-wide">Outreach Log</p>
+                    <button
+                      onClick={() => addOutreach(app.id)}
+                      className="flex items-center gap-1 text-xs text-[#6D99F2] hover:text-[#263746] cursor-pointer font-medium transition-colors"
+                    >
+                      <Plus size={12} /> Log interaction
+                    </button>
+                  </div>
+                  {(app.outreachLog || []).length === 0 ? (
+                    <p className="text-xs text-[#7A8FA3] italic">No outreach logged yet. Track every call, email and message here.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {[...(app.outreachLog || [])].sort((a, b) => b.date.localeCompare(a.date)).map(o => (
+                        <div key={o.id} className="grid grid-cols-[auto_auto_1fr_auto] gap-2 items-center bg-[#F8F5F2] rounded-lg px-3 py-2">
+                          <input
+                            className="border border-[#D8E4EC] rounded px-2 py-1 text-xs bg-white focus:outline-none w-28 flex-shrink-0"
+                            type="date"
+                            value={o.date}
+                            onChange={e => updateOutreach(app.id, o.id, 'date', e.target.value)}
+                          />
+                          <select
+                            className="border border-[#D8E4EC] rounded px-2 py-1 text-xs bg-white focus:outline-none flex-shrink-0"
+                            value={o.type}
+                            onChange={e => updateOutreach(app.id, o.id, 'type', e.target.value)}
+                          >
+                            {OUTREACH_TYPES.map(t => <option key={t}>{t}</option>)}
+                          </select>
+                          <input
+                            className="bg-transparent text-xs text-[#263746] focus:outline-none border-b border-dashed border-[#D8E4EC] focus:border-[#6D99F2] placeholder:text-[#7A8FA3] min-w-0"
+                            value={o.notes}
+                            onChange={e => updateOutreach(app.id, o.id, 'notes', e.target.value)}
+                            placeholder="What happened? Any response?"
+                          />
+                          <button
+                            onClick={() => removeOutreach(app.id, o.id)}
+                            className="text-[#D8E4EC] hover:text-[#FF5E5B] transition-colors cursor-pointer flex-shrink-0"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             )}

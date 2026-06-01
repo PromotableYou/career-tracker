@@ -4,7 +4,7 @@ import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
   LineChart, Line, XAxis, YAxis, CartesianGrid, BarChart, Bar
 } from 'recharts'
-import { Briefcase, Users, TrendingUp, Calendar, AlertCircle, CheckCircle, Clock, Target, Flame, Plus, Trophy, ClipboardList } from 'lucide-react'
+import { Briefcase, Users, TrendingUp, Calendar, AlertCircle, CheckCircle, Clock, Target, Flame, Plus, Trophy, ClipboardList, BookOpen, Lightbulb } from 'lucide-react'
 
 const COLORS = ['#263746','#6D99F2','#9999FF','#D4AF37','#FF5E5B','#FBD872','#344f66']
 
@@ -152,6 +152,47 @@ function getOverdueFollowUps(applications) {
   )
 }
 
+function getModulePrompts(applications, weeks) {
+  const prompts = []
+  const totalApps = applications.length
+  const hasInterview = applications.some(a => a.interviewDate)
+  const hasOffer = applications.some(a => a.status === 'Offer Received')
+
+  if (totalApps >= 5 && !hasInterview) {
+    prompts.push({
+      icon: '🎤',
+      module: 'Module 5 — Mastering Interviews',
+      message: `You've submitted ${totalApps} applications — are you interview-ready? Watch the Mastering Interviews module now.`,
+      urgency: 'amber',
+    })
+  }
+  if (hasInterview && !hasOffer) {
+    prompts.push({
+      icon: '🏆',
+      module: 'Influential Interviews',
+      message: 'You have an interview coming up — brush up on behavioural questions, career overview and how to hustle before the day.',
+      urgency: 'blue',
+    })
+  }
+  if (totalApps >= 10) {
+    prompts.push({
+      icon: '🧭',
+      module: 'Career Blueprint Builder',
+      message: `${totalApps} applications in — are you targeting the right roles? Revisit your Career Blueprint to make sure you're on track.`,
+      urgency: 'navy',
+    })
+  }
+  if (weeks >= 3 && totalApps < 3) {
+    prompts.push({
+      icon: '🚀',
+      module: 'Winning Applicants Formula',
+      message: 'You\'re a few weeks in but applications are low. Revisit the Winning Applicants Formula to build your momentum.',
+      urgency: 'amber',
+    })
+  }
+  return prompts
+}
+
 function getPipelineData(applications) {
   const stages = ['Applied', 'Awaiting Response', 'Interview Scheduled', 'Offer Received']
   return stages.map(stage => ({
@@ -189,6 +230,7 @@ export default function Dashboard({ navigate }) {
   const pipeline = getPipelineData(applications)
   const streak = getStreak(applications, networking)
   const overdueFollowUps = getOverdueFollowUps(applications)
+  const modulePrompts = getModulePrompts(applications, weeks)
   const wins = data.wins || []
   const [newWin, setNewWin] = React.useState('')
 
@@ -261,6 +303,27 @@ export default function Dashboard({ navigate }) {
           >
             Go to check-in
           </button>
+        </div>
+      )}
+
+      {/* Module prompts */}
+      {modulePrompts.length > 0 && (
+        <div className="bg-white rounded-xl border border-[#D8E4EC] p-5 mb-6">
+          <div className="flex items-center gap-2 mb-3">
+            <Lightbulb size={16} className="text-[#D4AF37]" />
+            <span className="text-sm font-semibold text-[#263746]">Suggested next steps</span>
+          </div>
+          <div className="space-y-2">
+            {modulePrompts.map((p, i) => (
+              <div key={i} className={`flex items-start gap-3 p-3 rounded-lg border ${p.urgency === 'amber' ? 'bg-amber-50 border-amber-200' : p.urgency === 'blue' ? 'bg-[#EEF3FA] border-[#D8E4EC]' : 'bg-[#F8F5F2] border-[#D8E4EC]'}`}>
+                <span className="text-lg flex-shrink-0">{p.icon}</span>
+                <div>
+                  <p className="text-xs font-bold text-[#263746] mb-0.5">{p.module}</p>
+                  <p className="text-xs text-[#4A5C6B]">{p.message}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

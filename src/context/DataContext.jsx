@@ -8,6 +8,7 @@ export const DEFAULTS = {
     linkedinUrl: '', resumeLink: '',
     weeklyAppTarget: 5, weeklyNetworkTarget: 3,
     jobTitles: [],
+    onboardingComplete: false, watchedWelcome: false, ninetyDayGoal: '',
   },
   blueprint: {
     company: '', culture: '', team: '', manager: '',
@@ -17,6 +18,7 @@ export const DEFAULTS = {
   resumeVersions: [],
   applications: [],
   networking: [],
+  events: [],
   linkedinChecklist: {
     headline: false, about: false, experience: false, skills: false,
     recommendations: false, activity: false, connections: false,
