@@ -913,7 +913,7 @@ export default function RoleTracker() {
                     title="Add to comparison"
                     onClick={e => e.stopPropagation()}
                   />
-                  <button onClick={e => { e.stopPropagation(); duplicateApp(app.id) }} title="Duplicate" className="text-[#D8E4EC] hover:text-[#6D99F2] flex-shrink-0 cursor-pointer transition-colors"><Copy size={14} /></button>
+                  <button onClick={e => { e.stopPropagation(); duplicateApp(app.id) }} title="Duplicate role" className="flex items-center gap-1 text-xs font-medium text-[#7A8FA3] hover:text-[#6D99F2] flex-shrink-0 cursor-pointer transition-colors px-1.5 py-0.5 rounded hover:bg-[#EEF3FA]"><Copy size={13} /> <span className="hidden sm:inline">Dupe</span></button>
                   <button onClick={e => { e.stopPropagation(); removeApp(app.id) }} className="text-[#D8E4EC] hover:text-[#FF5E5B] flex-shrink-0 cursor-pointer transition-colors"><Trash2 size={14} /></button>
                   <ChevronDown size={16} className={`text-[#7A8FA3] transition-transform flex-shrink-0 ${expanded === app.id ? 'rotate-180' : ''}`} />
                 </div>
@@ -978,7 +978,7 @@ export default function RoleTracker() {
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
                           <button onClick={() => setExpanded(isExpanded ? null : app.id)} className="text-[#7A8FA3] hover:text-[#263746] cursor-pointer transition-colors"><ChevronDown size={14} className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`} /></button>
-                          <button onClick={() => duplicateApp(app.id)} title="Duplicate" className="text-[#D8E4EC] hover:text-[#6D99F2] cursor-pointer transition-colors"><Copy size={13} /></button>
+                          <button onClick={() => duplicateApp(app.id)} title="Duplicate role" className="text-[#7A8FA3] hover:text-[#6D99F2] cursor-pointer transition-colors"><Copy size={13} /></button>
                           <button onClick={() => removeApp(app.id)} className="text-[#D8E4EC] hover:text-[#FF5E5B] cursor-pointer transition-colors"><Trash2 size={13} /></button>
                         </div>
                       </td>
