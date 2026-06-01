@@ -79,6 +79,8 @@ function newApp() {
     location: '',
     workType: '',
     todos: [],
+    salaryAdvertised: '', salaryTarget: '', salaryHighest: '', salaryLowest: '', salaryNonFinancial: '',
+    offerDate: '', offerAmount: '', offerDeadline: '', offerDecision: '', offerNotes: '',
   }
 }
 
@@ -482,6 +484,66 @@ export default function RoleTracker() {
                   + {t}
                 </button>
               ))}
+            </div>
+          )}
+        </div>
+
+        {/* Salary & Offer */}
+        <div className="mt-4 pt-4 border-t border-[#EEF3FA]">
+          <p className="text-xs font-semibold text-[#4A5C6B] uppercase tracking-wide mb-3">Salary & Offer</p>
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+            <div>
+              <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Advertised Salary</label>
+              <input className={inputCls} value={app.salaryAdvertised || ''} onChange={e => updateApp(app.id, 'salaryAdvertised', e.target.value)} placeholder="e.g. $90,000" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Your Target Salary</label>
+              <input className={inputCls} value={app.salaryTarget || ''} onChange={e => updateApp(app.id, 'salaryTarget', e.target.value)} placeholder="e.g. $105,000" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Highest $ You'd Accept</label>
+              <input className={inputCls} value={app.salaryHighest || ''} onChange={e => updateApp(app.id, 'salaryHighest', e.target.value)} placeholder="e.g. $110,000" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Lowest $ You'd Accept</label>
+              <input className={inputCls} value={app.salaryLowest || ''} onChange={e => updateApp(app.id, 'salaryLowest', e.target.value)} placeholder="e.g. $85,000" />
+            </div>
+            <div className="col-span-2">
+              <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Non-Financial Value</label>
+              <input className={inputCls} value={app.salaryNonFinancial || ''} onChange={e => updateApp(app.id, 'salaryNonFinancial', e.target.value)} placeholder="e.g. Flexible WFH, extra leave, career progression" />
+            </div>
+          </div>
+
+          {(app.status === 'Offer Received' || app.offerAmount || app.offerDate) && (
+            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+              <p className="text-xs font-bold text-emerald-800 uppercase tracking-wide mb-3">Offer Details</p>
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-emerald-700 mb-1">Offer Date</label>
+                  <input className="w-full border border-emerald-200 rounded-lg px-2 py-1.5 text-xs bg-white text-[#263746] focus:outline-none focus:ring-2 focus:ring-emerald-300/40" type="date" value={app.offerDate || ''} onChange={e => updateApp(app.id, 'offerDate', e.target.value)} />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-emerald-700 mb-1">Offered Amount</label>
+                  <input className="w-full border border-emerald-200 rounded-lg px-2 py-1.5 text-xs bg-white text-[#263746] focus:outline-none focus:ring-2 focus:ring-emerald-300/40" value={app.offerAmount || ''} onChange={e => updateApp(app.id, 'offerAmount', e.target.value)} placeholder="e.g. $95,000" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-emerald-700 mb-1">Deadline to Decide</label>
+                  <input className="w-full border border-emerald-200 rounded-lg px-2 py-1.5 text-xs bg-white text-[#263746] focus:outline-none focus:ring-2 focus:ring-emerald-300/40" type="date" value={app.offerDeadline || ''} onChange={e => updateApp(app.id, 'offerDeadline', e.target.value)} />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-emerald-700 mb-1">Decision</label>
+                  <select className="w-full border border-emerald-200 rounded-lg px-2 py-1.5 text-xs bg-white text-[#263746] focus:outline-none focus:ring-2 focus:ring-emerald-300/40" value={app.offerDecision || ''} onChange={e => updateApp(app.id, 'offerDecision', e.target.value)}>
+                    <option value="">Not decided</option>
+                    <option value="Accept">Accept</option>
+                    <option value="Negotiate">Negotiate</option>
+                    <option value="Decline">Decline</option>
+                  </select>
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-xs font-medium text-emerald-700 mb-1">Negotiation Notes</label>
+                  <input className="w-full border border-emerald-200 rounded-lg px-2 py-1.5 text-xs bg-white text-[#263746] focus:outline-none focus:ring-2 focus:ring-emerald-300/40 placeholder:text-[#7A8FA3]" value={app.offerNotes || ''} onChange={e => updateApp(app.id, 'offerNotes', e.target.value)} placeholder="Negotiation strategy, counter offer, notes..." />
+                </div>
+              </div>
             </div>
           )}
         </div>

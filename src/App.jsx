@@ -4,46 +4,37 @@ import CoachDashboard from './pages/CoachDashboard'
 import NoAccess from './pages/NoAccess'
 import Onboarding from './pages/Onboarding'
 import Dashboard from './pages/Dashboard'
-import Profile from './pages/Profile'
+import MyProfile from './pages/MyProfile'
 import RoleTracker from './pages/RoleTracker'
-import Blueprint from './pages/Blueprint'
 import Networking from './pages/Networking'
 import LinkedIn from './pages/LinkedIn'
 import InterviewPrep from './pages/InterviewPrep'
-import Salary from './pages/Salary'
-import Offers from './pages/Offers'
 import Coaching from './pages/Coaching'
 import WeeklyCheckin from './pages/WeeklyCheckin'
-import Resumes from './pages/Resumes'
 import Events from './pages/Events'
 import {
-  LayoutDashboard, User, Briefcase, Compass, Network,
-  Link2, MessageSquare, DollarSign, Award, CalendarCheck,
-  ClipboardList, Menu, X, ChevronRight, FileText, Search, GraduationCap
+  LayoutDashboard, User, Briefcase, Network,
+  Link2, MessageSquare, CalendarCheck,
+  ClipboardList, Menu, X, ChevronRight, Search, GraduationCap
 } from 'lucide-react'
 import pyLogo from './assets/py-logo.png'
 
 const NAV = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'profile', label: 'Profile & Targets', icon: User },
-  { id: 'resumes', label: 'Resumes', icon: FileText },
+  { id: 'myprofile', label: 'My Profile', icon: User },
   { id: 'roles', label: 'Role Tracker', icon: Briefcase },
-  { id: 'blueprint', label: 'Career Blueprint', icon: Compass },
   { id: 'networking', label: 'Networking', icon: Network },
   { id: 'linkedin', label: 'LinkedIn', icon: Link2 },
   { id: 'interviews', label: 'Interview Prep', icon: MessageSquare },
-  { id: 'salary', label: 'Salary', icon: DollarSign },
-  { id: 'offers', label: 'Offers', icon: Award },
   { id: 'coaching', label: 'Coaching Sessions', icon: CalendarCheck },
   { id: 'checkin', label: 'Weekly Check-In', icon: ClipboardList },
   { id: 'events', label: 'Professional Dev', icon: GraduationCap },
 ]
 
 const PAGES = {
-  dashboard: Dashboard, profile: Profile, resumes: Resumes, roles: RoleTracker,
-  blueprint: Blueprint, networking: Networking, linkedin: LinkedIn,
-  interviews: InterviewPrep, salary: Salary, offers: Offers,
-  coaching: Coaching, checkin: WeeklyCheckin, events: Events,
+  dashboard: Dashboard, myprofile: MyProfile, roles: RoleTracker,
+  networking: Networking, linkedin: LinkedIn,
+  interviews: InterviewPrep, coaching: Coaching, checkin: WeeklyCheckin, events: Events,
 }
 
 function EmbedLayout({ page, navigate, Page }) {
