@@ -654,6 +654,47 @@ export default function Dashboard({ navigate }) {
         </div>
       )}
 
+      {/* ── SOURCE BREAKDOWN ─────────────────────────────────── */}
+      {(() => {
+        const withSource = applications.filter(a => a.source)
+        if (withSource.length < 3) return null
+        const sources = {}
+        withSource.forEach(a => {
+          if (!sources[a.source]) sources[a.source] = { apps: 0, interviews: 0 }
+          sources[a.source].apps++
+          if (a.interviewDate) sources[a.source].interviews++
+        })
+        const sorted = Object.entries(sources).sort((a, b) => b[1].apps - a[1].apps)
+        const maxApps = Math.max(...sorted.map(([, v]) => v.apps))
+        return (
+          <div className="bg-white rounded-3xl border border-[#E4EDF5] p-7 mb-6">
+            <div className="flex items-center gap-2 mb-5">
+              <TrendingUp size={18} className="text-[#6D99F2]" />
+              <h3 className="text-base font-black text-[#1a2b38] font-['Inter']">Which channel is working?</h3>
+            </div>
+            <div className="space-y-3">
+              {sorted.map(([source, { apps, interviews }]) => {
+                const pct = apps > 0 ? Math.round((interviews / apps) * 100) : 0
+                return (
+                  <div key={source} className="flex items-center gap-4">
+                    <span className="text-xs font-semibold text-[#263746] w-28 flex-shrink-0 truncate">{source}</span>
+                    <div className="flex-1 h-2 bg-[#F0F5FA] rounded-full overflow-hidden">
+                      <div className="h-full bg-[#6D99F2] rounded-full transition-all" style={{ width: `${(apps / maxApps) * 100}%` }} />
+                    </div>
+                    <span className="text-xs text-[#A8BCC8] flex-shrink-0 w-16 text-right">{apps} app{apps !== 1 ? 's' : ''}</span>
+                    {interviews > 0
+                      ? <span className="text-xs font-bold text-emerald-600 flex-shrink-0 w-20 text-right">{pct}% → interview</span>
+                      : <span className="text-xs text-[#D8E4EC] flex-shrink-0 w-20 text-right">no interviews yet</span>
+                    }
+                  </div>
+                )
+              })}
+            </div>
+            <p className="text-[10px] text-[#C8D8E4] mt-4">Based on {withSource.length} tracked application{withSource.length !== 1 ? 's' : ''} with a source set.</p>
+          </div>
+        )
+      })()}
+
     </div>
   )
 }

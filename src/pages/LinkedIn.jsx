@@ -89,6 +89,36 @@ export default function LinkedIn() {
         </button>
       </div>
 
+      {/* Response rate stats */}
+      {outreach.length > 0 && (() => {
+        const connected = outreach.filter(o => o.response === 'Connected').length
+        const positive = outreach.filter(o => o.response === 'Positive').length
+        const responded = connected + positive
+        const responsePct = Math.round((responded / outreach.length) * 100)
+        const rateColor = responsePct >= 30 ? 'text-emerald-600' : responsePct >= 10 ? 'text-amber-600' : 'text-[#FF5E5B]'
+        const barColor = responsePct >= 30 ? 'bg-emerald-500' : responsePct >= 10 ? 'bg-amber-400' : 'bg-[#FF5E5B]'
+        return (
+          <div className="bg-white rounded-xl border border-[#D8E4EC] p-5 mb-4">
+            <div className="grid grid-cols-4 gap-4 mb-3">
+              {[
+                { label: 'Sent', value: outreach.length, color: 'text-[#263746]' },
+                { label: 'Connected', value: connected, color: 'text-blue-600' },
+                { label: 'Positive', value: positive, color: 'text-emerald-600' },
+                { label: 'Response rate', value: `${responsePct}%`, color: rateColor },
+              ].map(({ label, value, color }) => (
+                <div key={label} className="text-center">
+                  <div className={`text-2xl font-black font-['Inter'] ${color}`}>{value}</div>
+                  <div className="text-[10px] text-[#7A8FA3] mt-0.5 font-semibold uppercase tracking-wide">{label}</div>
+                </div>
+              ))}
+            </div>
+            <div className="w-full h-1.5 bg-[#EEF3FA] rounded-full overflow-hidden">
+              <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${responsePct}%` }} />
+            </div>
+          </div>
+        )
+      })()}
+
       {outreach.length === 0 && (
         <div className="bg-white rounded-xl border border-[#D8E4EC] p-10 text-center">
           <div className="text-4xl mb-3">💬</div>

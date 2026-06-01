@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useData } from '../context/DataContext'
-import { Plus, Trash2, ChevronDown, ChevronUp, MapPin, Copy } from 'lucide-react'
+import { Plus, Trash2, ChevronDown, ChevronUp, MapPin, Copy, Search } from 'lucide-react'
 
 const TYPE_OPTIONS = ['','Peer','Mentor','Recruiter','Hiring Manager','Alumni','Former colleague','Industry contact','LinkedIn connection','Other']
 const DEPTH_OPTIONS = ['','Weak tie','Acquaintance','Established','Strong']
@@ -57,6 +57,7 @@ export default function Networking() {
   const [expanded, setExpanded] = useState(null)
   const [statusFilter, setStatusFilter] = useState('All')
   const [showTemplates, setShowTemplates] = useState(false)
+  const [search, setSearch] = useState('')
 
   function set(next) { update('networking', next) }
   function add() {
@@ -100,19 +101,27 @@ export default function Networking() {
         </button>
       </div>
 
-      {/* Status filter */}
+      {/* Filter bar */}
       {contacts.length > 0 && (
-        <div className="flex items-center gap-2 mb-4">
-          {['All', 'Active', 'Inactive'].map(f => (
-            <button
-              key={f}
-              onClick={() => setStatusFilter(f)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-colors ${statusFilter === f ? 'bg-[#263746] text-white' : 'bg-white border border-[#D8E4EC] text-[#4A5C6B] hover:bg-[#EEF3FA]'}`}
-            >{f}</button>
-          ))}
-          <span className="text-xs text-[#7A8FA3] ml-2">
-            {contacts.filter(c => statusFilter === 'All' || (c.status || 'Active') === statusFilter).length} contact{contacts.length !== 1 ? 's' : ''}
-          </span>
+        <div className="flex flex-wrap items-center gap-3 mb-4">
+          <div className="relative flex-1 min-w-[180px] max-w-xs">
+            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#7A8FA3]" />
+            <input
+              className="w-full border border-[#D8E4EC] rounded-lg pl-8 pr-3 py-2 text-xs text-[#263746] focus:outline-none focus:ring-2 focus:ring-[#6D99F2]/40 bg-white placeholder:text-[#7A8FA3]"
+              placeholder="Search by name, role..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+          </div>
+          <div className="flex items-center gap-1.5">
+            {['All', 'Active', 'Inactive'].map(f => (
+              <button
+                key={f}
+                onClick={() => setStatusFilter(f)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-colors ${statusFilter === f ? 'bg-[#263746] text-white' : 'bg-white border border-[#D8E4EC] text-[#4A5C6B] hover:bg-[#EEF3FA]'}`}
+              >{f}</button>
+            ))}
+          </div>
         </div>
       )}
 
@@ -128,7 +137,13 @@ export default function Networking() {
       )}
 
       <div className="space-y-3">
-        {contacts.filter(c => statusFilter === 'All' || (c.status || 'Active') === statusFilter).map(c => (
+        {contacts.filter(c => {
+          const matchStatus = statusFilter === 'All' || (c.status || 'Active') === statusFilter
+          if (!matchStatus) return false
+          if (!search.trim()) return true
+          const q = search.toLowerCase()
+          return (c.person || '').toLowerCase().includes(q) || (c.role || '').toLowerCase().includes(q) || (c.area || '').toLowerCase().includes(q) || (c.location || '').toLowerCase().includes(q)
+        }).map(c => (
           <div key={c.id} className="bg-white rounded-xl border border-[#D8E4EC] overflow-hidden">
             {/* Card header */}
             <div
@@ -287,7 +302,7 @@ export default function Networking() {
 
       {contacts.length > 0 && (
         <div className="mt-4 flex justify-between items-center text-xs text-[#7A8FA3]">
-          <span>{contacts.filter(c => statusFilter === 'All' || (c.status || 'Active') === statusFilter).length} of {contacts.length} contact{contacts.length !== 1 ? 's' : ''}</span>
+          <span>{contacts.filter(c => { const ms = statusFilter === 'All' || (c.status || 'Active') === statusFilter; if (!ms) return false; if (!search.trim()) return true; const q = search.toLowerCase(); return (c.person||'').toLowerCase().includes(q)||(c.role||'').toLowerCase().includes(q) }).length} of {contacts.length} contact{contacts.length !== 1 ? 's' : ''}</span>
           <button onClick={add} className="text-[#6D99F2] hover:underline cursor-pointer">+ Add contact</button>
         </div>
       )}

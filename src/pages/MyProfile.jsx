@@ -193,6 +193,35 @@ export default function MyProfile() {
         <p className="text-sm text-[#7A8FA3]">Your foundations, your resumes, your blueprint. Everything in one place.</p>
       </div>
 
+      {/* Completeness meter */}
+      {(() => {
+        const profileFields = ['name', 'email', 'coach', 'startDate', 'targetRole', 'linkedinUrl']
+        const bpFields = ['company', 'culture', 'team', 'manager', 'tasks', 'values', 'environment', 'salary']
+        const filled = profileFields.filter(f => profile[f]).length + bpFields.filter(k => blueprint[k]).length
+        const total = profileFields.length + bpFields.length
+        const pct = Math.round((filled / total) * 100)
+        const barColor = pct >= 80 ? 'bg-emerald-500' : pct >= 50 ? 'bg-[#6D99F2]' : 'bg-amber-400'
+        const textColor = pct >= 80 ? 'text-emerald-600' : pct >= 50 ? 'text-[#6D99F2]' : 'text-amber-600'
+        const label = pct === 100 ? 'Complete!' : pct >= 80 ? 'Almost there' : pct >= 50 ? 'Good progress' : 'Let\'s fill this in'
+        const detailFilled = profileFields.filter(f => profile[f]).length
+        const bpFilled = bpFields.filter(k => blueprint[k]).length
+        return (
+          <div className="bg-white rounded-xl border border-[#D8E4EC] px-5 py-4 mb-5">
+            <div className="flex items-center justify-between text-xs mb-2">
+              <span className="font-semibold text-[#4A5C6B]">Profile completeness</span>
+              <span className={`font-bold ${textColor}`}>{pct}% · {label}</span>
+            </div>
+            <div className="w-full h-2 bg-[#EEF3FA] rounded-full overflow-hidden mb-2">
+              <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${pct}%` }} />
+            </div>
+            <div className="flex gap-4">
+              <span className="text-[10px] text-[#7A8FA3]">Details: <span className="font-semibold text-[#263746]">{detailFilled}/{profileFields.length}</span></span>
+              <span className="text-[10px] text-[#7A8FA3]">Blueprint: <span className="font-semibold text-[#263746]">{bpFilled}/{bpFields.length}</span></span>
+            </div>
+          </div>
+        )
+      })()}
+
       {/* Tabs */}
       <div className="flex gap-1 bg-[#F0F5FA] rounded-xl p-1 mb-6 w-fit">
         {TABS.map(({ id, label, icon: Icon }) => (

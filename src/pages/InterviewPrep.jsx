@@ -85,6 +85,9 @@ export default function InterviewPrep() {
   const [qExpanded, setQExpanded] = useState(null)
   const [filterCat, setFilterCat] = useState('')
   const [showEmailTemplates, setShowEmailTemplates] = useState(false)
+  const [practiceMode, setPracticeMode] = useState(false)
+  const [practiceIdx, setPracticeIdx] = useState(0)
+  const [showAnswer, setShowAnswer] = useState(false)
   const interviews = data.interviewPrep || []
   const questions = data.questionBank || []
 
@@ -122,8 +125,114 @@ export default function InterviewPrep() {
     ? (questions.filter(q => q.confidence > 0).reduce((s, q) => s + q.confidence, 0) / questions.filter(q => q.confidence > 0).length).toFixed(1)
     : null
 
+  const practiceQuestions = filteredQuestions.filter(q => q.text)
+  const practiceQ = practiceQuestions[practiceIdx] || null
+
+  function startPractice() {
+    setPracticeIdx(0)
+    setShowAnswer(false)
+    setPracticeMode(true)
+  }
+
+  function nextPractice() {
+    setShowAnswer(false)
+    setPracticeIdx(i => Math.min(i + 1, practiceQuestions.length - 1))
+  }
+
+  function prevPractice() {
+    setShowAnswer(false)
+    setPracticeIdx(i => Math.max(i - 1, 0))
+  }
+
   return (
     <div className="max-w-4xl">
+
+      {/* Practice mode overlay */}
+      {practiceMode && practiceQ && (
+        <div className="fixed inset-0 bg-[#1a2b38]/80 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-xl">
+            {/* Header */}
+            <div className="flex items-center justify-between px-7 pt-6 pb-4 border-b border-[#EEF3FA]">
+              <div>
+                <p className="text-xs font-bold text-[#A8BCC8] uppercase tracking-widest mb-0.5">Practice mode</p>
+                <p className="text-sm font-semibold text-[#263746]">{practiceIdx + 1} of {practiceQuestions.length}</p>
+              </div>
+              <button onClick={() => setPracticeMode(false)} className="text-[#7A8FA3] hover:text-[#263746] cursor-pointer text-xs font-semibold bg-[#F0F5FA] px-3 py-1.5 rounded-lg transition-colors">
+                Exit practice
+              </button>
+            </div>
+
+            {/* Progress bar */}
+            <div className="h-1 bg-[#F0F5FA]">
+              <div className="h-full bg-[#6D99F2] transition-all" style={{ width: `${((practiceIdx + 1) / practiceQuestions.length) * 100}%` }} />
+            </div>
+
+            <div className="px-7 py-6">
+              {/* Category */}
+              {practiceQ.category && (
+                <span className="inline-block text-xs bg-[#EEF3FA] text-[#4A5C6B] px-2.5 py-1 rounded-full font-medium mb-4">{practiceQ.category}</span>
+              )}
+
+              {/* Question */}
+              <p className="text-xl font-bold text-[#1a2b38] leading-snug mb-6">{practiceQ.text}</p>
+
+              {/* Answer area */}
+              {!showAnswer ? (
+                <button
+                  onClick={() => setShowAnswer(true)}
+                  className="w-full py-3.5 rounded-xl border-2 border-dashed border-[#D8E4EC] text-sm text-[#7A8FA3] hover:border-[#6D99F2] hover:text-[#6D99F2] cursor-pointer transition-colors font-medium"
+                >
+                  Show my prepared answer →
+                </button>
+              ) : (
+                <div className="bg-[#F8FBFD] rounded-xl border border-[#EEF3FA] p-4 mb-4">
+                  {practiceQ.answer
+                    ? <p className="text-sm text-[#263746] leading-relaxed whitespace-pre-wrap">{practiceQ.answer}</p>
+                    : <p className="text-sm text-[#B8CAD8] italic">No answer saved yet — add one in the Question Bank.</p>
+                  }
+                </div>
+              )}
+
+              {/* Rate confidence */}
+              {showAnswer && (
+                <div className="flex items-center gap-3 mb-6 mt-4">
+                  <span className="text-xs font-semibold text-[#4A5C6B]">How'd that feel?</span>
+                  <StarRating value={practiceQ.confidence} onChange={v => { updQuestion(practiceQ.id, 'confidence', v) }} />
+                  {practiceQ.confidence > 0 && (
+                    <span className="text-xs text-[#7A8FA3]">{['','Not ready','Getting there','Fairly confident','Confident','Nailed it'][practiceQ.confidence]}</span>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Nav footer */}
+            <div className="flex gap-3 px-7 pb-6">
+              <button
+                onClick={prevPractice}
+                disabled={practiceIdx === 0}
+                className="flex-1 py-2.5 rounded-xl border border-[#D8E4EC] text-sm font-semibold text-[#4A5C6B] hover:bg-[#F5F9FD] cursor-pointer transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                ← Previous
+              </button>
+              {practiceIdx < practiceQuestions.length - 1 ? (
+                <button
+                  onClick={nextPractice}
+                  className="flex-1 py-2.5 rounded-xl bg-[#263746] hover:bg-[#1a2832] text-sm font-semibold text-white cursor-pointer transition-colors"
+                >
+                  Next →
+                </button>
+              ) : (
+                <button
+                  onClick={() => setPracticeMode(false)}
+                  className="flex-1 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-sm font-semibold text-white cursor-pointer transition-colors"
+                >
+                  Finish 🎉
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-2xl font-bold text-[#263746] mb-1 font-['Inter']">Interview Prep</h2>
@@ -274,6 +383,11 @@ export default function InterviewPrep() {
             {questions.length === 0 && (
               <button onClick={addStarters} className="flex items-center gap-2 border border-[#D8E4EC] text-[#4A5C6B] hover:bg-[#F5F9FD] text-sm font-medium px-4 py-2 rounded-lg cursor-pointer transition-colors">
                 Load starter questions
+              </button>
+            )}
+            {practiceQuestions.length >= 2 && (
+              <button onClick={startPractice} className="flex items-center gap-2 border border-[#6D99F2] text-[#6D99F2] hover:bg-[#EEF3FA] text-sm font-medium px-4 py-2 rounded-lg cursor-pointer transition-colors">
+                ▶ Practice
               </button>
             )}
             <button onClick={addQuestion} className="flex items-center gap-2 bg-[#263746] hover:bg-[#1a2832] text-white text-sm font-medium px-4 py-2 rounded-lg cursor-pointer transition-colors">
