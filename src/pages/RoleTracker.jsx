@@ -90,7 +90,17 @@ export default function RoleTracker() {
     setExpanded(next[next.length - 1].id)
   }
   function removeApp(id) { setApps(apps.filter(a => a.id !== id)); if (expanded === id) setExpanded(null) }
-  function updateApp(id, field, value) { setApps(apps.map(a => a.id === id ? { ...a, [field]: value } : a)) }
+  function updateApp(id, field, value) {
+    setApps(apps.map(a => {
+      if (a.id !== id) return a
+      const updated = { ...a, [field]: value }
+      // Auto-timestamp: fill submitted date when status changes to Applied
+      if (field === 'status' && value === 'Applied' && !a.submittedDate) {
+        updated.submittedDate = new Date().toISOString().slice(0, 10)
+      }
+      return updated
+    }))
+  }
   function updateRating(id, catKey, value) {
     setApps(apps.map(a => a.id === id ? { ...a, blueprintRatings: { ...a.blueprintRatings, [catKey]: value } } : a))
   }
@@ -322,6 +332,22 @@ export default function RoleTracker() {
                   </div>
                 </div>
 
+                {/* Feedback — highlighted prominently */}
+                {(app.status === 'Rejected' || app.status === 'Interview Scheduled' || app.status === 'Offer Received' || app.feedback) && (
+                  <div className="mt-4 pt-4 border-t border-[#EEF3FA]">
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                      <p className="text-xs font-bold text-amber-800 uppercase tracking-wide mb-2">📝 Feedback Received</p>
+                      <textarea
+                        className="w-full border border-amber-200 rounded-lg px-3 py-2 text-sm text-[#263746] focus:outline-none focus:ring-2 focus:ring-amber-300/40 bg-white placeholder:text-[#7A8FA3] resize-none"
+                        rows={3}
+                        value={app.feedback}
+                        onChange={e => updateApp(app.id, 'feedback', e.target.value)}
+                        placeholder="What feedback did you receive? What would you do differently?"
+                      />
+                    </div>
+                  </div>
+                )}
+
                 <div className="mt-4 pt-4 border-t border-[#EEF3FA]">
                   <p className="text-xs font-semibold text-[#4A5C6B] uppercase tracking-wide mb-3">Interview & Outcome</p>
                   <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
@@ -346,10 +372,6 @@ export default function RoleTracker() {
                     <div>
                       <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Interview Outcome</label>
                       <input className={inputCls} value={app.interviewOutcome} onChange={e => updateApp(app.id, 'interviewOutcome', e.target.value)} placeholder="e.g. Progressed to next round" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Feedback</label>
-                      <textarea className={inputCls} rows={2} value={app.feedback} onChange={e => updateApp(app.id, 'feedback', e.target.value)} placeholder="Feedback received" />
                     </div>
                     <div className="col-span-2 lg:col-span-3">
                       <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Additional Notes</label>

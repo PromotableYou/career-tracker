@@ -36,10 +36,14 @@ function getQuote() {
   return QUOTES[new Date().getDay() % QUOTES.length]
 }
 
-function daysSinceLastActivity(applications, networking) {
+function daysSinceLastActivity(applications, networking, weeklyCheckins, coaching) {
   const dates = [
     ...applications.map(a => a.submittedDate),
+    ...applications.map(a => a.interviewDate),
     ...(networking || []).map(n => n.lastContact),
+    ...(networking || []).flatMap(n => (n.touchpoints || []).map(tp => tp.date)),
+    ...(weeklyCheckins || []).filter(c => c.submitted && c.weekOf).map(c => c.weekOf),
+    ...(coaching || []).map(c => c.date),
   ].filter(Boolean).map(d => new Date(d))
   if (!dates.length) return null
   return Math.floor((Date.now() - Math.max(...dates)) / 86400000)
@@ -157,14 +161,16 @@ function getPipelineData(applications) {
 }
 
 export default function Dashboard({ navigate }) {
-  const { data, update } = useData()
+  const { data, update, updateNested } = useData()
   const { profile, applications, networking, weeklyCheckins } = data
+  const [editingTarget, setEditingTarget] = React.useState(null)
+  const [targetDraft, setTargetDraft] = React.useState('')
 
   const totalApps = applications.length
   const interviews = applications.filter(a => a.interviewDate).length
   const convRate = totalApps ? ((interviews / totalApps) * 100).toFixed(1) : '0.0'
   const weeks = weeksActive(profile.startDate)
-  const days = daysSinceLastActivity(applications, networking)
+  const days = daysSinceLastActivity(applications, networking, weeklyCheckins, data.coaching)
   const appsWeek = appsThisWeek(applications)
   const networkingWeek = networking.filter(n => n.lastContact && new Date(n.lastContact) >= Date.now() - 7 * 86400000).length
   const status = getStatus(days, appsWeek, profile.weeklyAppTarget || 5)
@@ -293,7 +299,16 @@ export default function Dashboard({ navigate }) {
         <div className="bg-white rounded-xl p-5 border border-[#D8E4EC]">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-semibold text-[#263746]">Applications this week</span>
-            <span className="text-xs text-[#7A8FA3]">{appsWeek} / {profile.weeklyAppTarget || 5}</span>
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-[#7A8FA3]">{appsWeek} /</span>
+              {editingTarget === 'apps' ? (
+                <form onSubmit={e => { e.preventDefault(); updateNested('profile','weeklyAppTarget', parseInt(targetDraft) || 5); setEditingTarget(null) }} className="flex items-center gap-1">
+                  <input autoFocus className="w-10 border border-[#6D99F2] rounded px-1 py-0.5 text-xs text-center text-[#263746] focus:outline-none" value={targetDraft} onChange={e => setTargetDraft(e.target.value)} onBlur={() => { updateNested('profile','weeklyAppTarget', parseInt(targetDraft) || 5); setEditingTarget(null) }} />
+                </form>
+              ) : (
+                <button onClick={() => { setEditingTarget('apps'); setTargetDraft(String(profile.weeklyAppTarget || 5)) }} className="text-xs text-[#7A8FA3] hover:text-[#6D99F2] cursor-pointer underline decoration-dotted" title="Click to edit target">{profile.weeklyAppTarget || 5}</button>
+              )}
+            </div>
           </div>
           <div className="w-full h-3 bg-[#EEF3FA] rounded-full overflow-hidden mb-1">
             <div
@@ -302,7 +317,8 @@ export default function Dashboard({ navigate }) {
             />
           </div>
           <p className="text-xs text-[#7A8FA3]">
-            {appsWeek >= (profile.weeklyAppTarget || 5) ? '🎉 Target hit!' : `${(profile.weeklyAppTarget || 5) - appsWeek} to go`}
+            {appsWeek >= (profile.weeklyAppTarget || 5) ? '🎉 Target hit!' : `${(profile.weeklyAppTarget || 5) - appsWeek} to go · `}
+            <button onClick={() => { setEditingTarget('apps'); setTargetDraft(String(profile.weeklyAppTarget || 5)) }} className="text-[#6D99F2] hover:underline cursor-pointer">edit target</button>
           </p>
         </div>
 
@@ -310,7 +326,16 @@ export default function Dashboard({ navigate }) {
         <div className="bg-white rounded-xl p-5 border border-[#D8E4EC]">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-semibold text-[#263746]">Networking this week</span>
-            <span className="text-xs text-[#7A8FA3]">{networkingWeek} / {profile.weeklyNetworkTarget || 3}</span>
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-[#7A8FA3]">{networkingWeek} /</span>
+              {editingTarget === 'network' ? (
+                <form onSubmit={e => { e.preventDefault(); updateNested('profile','weeklyNetworkTarget', parseInt(targetDraft) || 3); setEditingTarget(null) }} className="flex items-center gap-1">
+                  <input autoFocus className="w-10 border border-[#6D99F2] rounded px-1 py-0.5 text-xs text-center text-[#263746] focus:outline-none" value={targetDraft} onChange={e => setTargetDraft(e.target.value)} onBlur={() => { updateNested('profile','weeklyNetworkTarget', parseInt(targetDraft) || 3); setEditingTarget(null) }} />
+                </form>
+              ) : (
+                <button onClick={() => { setEditingTarget('network'); setTargetDraft(String(profile.weeklyNetworkTarget || 3)) }} className="text-xs text-[#7A8FA3] hover:text-[#6D99F2] cursor-pointer underline decoration-dotted" title="Click to edit target">{profile.weeklyNetworkTarget || 3}</button>
+              )}
+            </div>
           </div>
           <div className="w-full h-3 bg-[#EEF3FA] rounded-full overflow-hidden mb-1">
             <div
@@ -319,7 +344,8 @@ export default function Dashboard({ navigate }) {
             />
           </div>
           <p className="text-xs text-[#7A8FA3]">
-            {networkingWeek >= (profile.weeklyNetworkTarget || 3) ? '🎉 Target hit!' : `${(profile.weeklyNetworkTarget || 3) - networkingWeek} to go`}
+            {networkingWeek >= (profile.weeklyNetworkTarget || 3) ? '🎉 Target hit!' : `${(profile.weeklyNetworkTarget || 3) - networkingWeek} to go · `}
+            <button onClick={() => { setEditingTarget('network'); setTargetDraft(String(profile.weeklyNetworkTarget || 3)) }} className="text-[#6D99F2] hover:underline cursor-pointer">edit target</button>
           </p>
         </div>
       </div>
