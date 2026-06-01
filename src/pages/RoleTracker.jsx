@@ -77,11 +77,11 @@ function newApp() {
 
 const FORM_TABS = [
   { id: 'details', label: 'Details' },
+  { id: 'research', label: 'Research' },
   { id: 'blueprint', label: 'Blueprint' },
   { id: 'activity', label: 'Activity' },
   { id: 'interview', label: 'Interview' },
-  { id: 'documents', label: 'Documents' },
-  { id: 'research', label: 'Research' },
+  { id: 'documents', label: 'Docs' },
 ]
 
 // ── ExpandedForm is defined OUTSIDE RoleTracker so it never gets recreated on re-render ──
@@ -104,7 +104,7 @@ function ExpandedForm({
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className={`relative px-4 py-3 text-xs font-semibold cursor-pointer transition-colors whitespace-nowrap border-b-2 -mb-px flex items-center gap-1.5 ${tab === t.id ? 'text-[#263746] border-[#263746]' : 'text-[#7A8FA3] border-transparent hover:text-[#4A5C6B]'}`}
+            className={`relative px-3 py-3 text-xs font-semibold cursor-pointer transition-colors whitespace-nowrap border-b-2 -mb-px flex items-center gap-1.5 ${tab === t.id ? 'text-[#263746] border-[#263746]' : 'text-[#7A8FA3] border-transparent hover:text-[#4A5C6B]'}`}
           >
             {t.label}
             {t.id === 'activity' && todosRemaining > 0 && (
