@@ -654,6 +654,20 @@ export default function Dashboard({ navigate }) {
         </div>
       )}
 
+      {/* ── 90-DAY GOAL ───────────────────────────────────────── */}
+      {profile.ninetyDayGoal && (
+        <div className="bg-white rounded-3xl border border-[#E4EDF5] px-8 py-6 mb-6 flex items-start gap-5">
+          <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <Target size={18} className="text-amber-500" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-bold text-[#A8BCC8] uppercase tracking-widest mb-1.5">Your 90-Day Goal</p>
+            <p className="text-base text-[#263746] font-medium leading-relaxed italic font-['Playfair_Display']">"{profile.ninetyDayGoal}"</p>
+          </div>
+          <button onClick={() => navigate('profile')} className="text-xs text-[#6D99F2] hover:underline cursor-pointer flex-shrink-0 mt-1">Edit →</button>
+        </div>
+      )}
+
       {/* ── SOURCE BREAKDOWN ─────────────────────────────────── */}
       {(() => {
         const withSource = applications.filter(a => a.source)

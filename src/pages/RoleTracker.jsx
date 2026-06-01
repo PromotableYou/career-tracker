@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useData } from '../context/DataContext'
-import { Plus, Trash2, ChevronDown, ExternalLink, Info, LayoutGrid, List, Columns2, Search } from 'lucide-react'
+import { Plus, Trash2, ChevronDown, ExternalLink, Info, LayoutGrid, List, Columns2, Search, Copy, Download, Clock } from 'lucide-react'
 import FileUpload from '../components/FileUpload'
 
 const STATUS_OPTIONS = ['Not Started', 'Researching', 'Applied', 'Awaiting Response', 'Interview Scheduled', 'Offer Received', 'Rejected', 'Withdrawn']
@@ -71,6 +71,7 @@ function newApp() {
     outreachLog: [], jobDescription: '', location: '', workType: '', todos: [],
     salaryAdvertised: '', salaryTarget: '', salaryHighest: '', salaryLowest: '', salaryNonFinancial: '',
     offerDate: '', offerAmount: '', offerDeadline: '', offerDecision: '', offerNotes: '',
+    researchCompany: '', researchFit: '', researchQuestions: '', researchKeyPeople: '',
   }
 }
 
@@ -80,6 +81,7 @@ const FORM_TABS = [
   { id: 'activity', label: 'Activity' },
   { id: 'interview', label: 'Interview' },
   { id: 'documents', label: 'Documents' },
+  { id: 'research', label: 'Research' },
 ]
 
 // ── ExpandedForm is defined OUTSIDE RoleTracker so it never gets recreated on re-render ──
@@ -477,6 +479,94 @@ function ExpandedForm({
           </div>
         )}
 
+        {/* ── RESEARCH TAB ── */}
+        {tab === 'research' && (
+          <div className="space-y-5">
+            <div>
+              <label className="block text-xs font-semibold text-[#4A5C6B] uppercase tracking-wide mb-2">Company Research</label>
+              <p className="text-xs text-[#7A8FA3] mb-4">Use this before your application and before interviews. Fill it in progressively.</p>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-medium text-[#4A5C6B] mb-1">What do you know about this company?</label>
+                  <textarea className={inputCls} rows={3} value={app.researchCompany || ''} onChange={e => updateApp(app.id, 'researchCompany', e.target.value)} placeholder="Mission, values, recent news, products/services, culture, size, growth..." />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Why are you a fit for this role?</label>
+                  <textarea className={inputCls} rows={3} value={app.researchFit || ''} onChange={e => updateApp(app.id, 'researchFit', e.target.value)} placeholder="Your relevant skills, experience, and why this role makes sense for you now..." />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Questions you want to ask</label>
+                  <textarea className={inputCls} rows={3} value={app.researchQuestions || ''} onChange={e => updateApp(app.id, 'researchQuestions', e.target.value)} placeholder="What do you want to know about the team, role, culture, growth opportunities?" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Key people (HM, team leads, relevant contacts)</label>
+                  <textarea className={inputCls} rows={2} value={app.researchKeyPeople || ''} onChange={e => updateApp(app.id, 'researchKeyPeople', e.target.value)} placeholder="e.g. Jane Smith — Head of Product, connected on LinkedIn" />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+      </div>
+    </div>
+  )
+}
+
+// ── ComparePanel is defined OUTSIDE RoleTracker at module level ──
+function ComparePanel({ apps, compareIds, onClose }) {
+  const compared = compareIds.map(id => apps.find(a => a.id === id)).filter(Boolean)
+  if (compared.length < 2) return null
+  return (
+    <div className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-[#263746] shadow-2xl z-40 max-h-[60vh] overflow-y-auto">
+      <div className="max-w-5xl mx-auto px-6 py-4">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-bold text-[#263746]">Comparing {compared.length} roles</h3>
+          <button onClick={onClose} className="text-xs text-[#7A8FA3] hover:text-[#263746] cursor-pointer">&#x2715; Close</button>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-[#EEF3FA]">
+                <th className="text-left py-2 pr-4 text-[#4A5C6B] font-semibold w-32">Category</th>
+                {compared.map(a => (
+                  <th key={a.id} className="text-center py-2 px-3 min-w-[140px]">
+                    <p className="font-bold text-[#263746] truncate">{a.company || 'Untitled'}</p>
+                    <p className="text-[#7A8FA3] font-normal truncate">{a.jobRole || 'No role'}</p>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                { key: '__status', label: 'Status', render: a => a.status || '—' },
+                { key: '__worktype', label: 'Work Type', render: a => a.workType || '—' },
+                { key: '__location', label: 'Location', render: a => a.location || '—' },
+                { key: '__salary', label: 'Salary (advertised)', render: a => a.salaryAdvertised || '—' },
+                ...BP_CATEGORIES.map(c => ({ key: c.key, label: c.label, render: a => {
+                  const v = parseInt(a.blueprintRatings?.[c.key]) || 0
+                  const color = v >= 4 ? 'text-emerald-600' : v === 3 ? 'text-amber-600' : v > 0 ? 'text-red-500' : 'text-[#D8E4EC]'
+                  return <span className={`font-bold ${color}`}>{v > 0 ? v : '—'}</span>
+                }})),
+              ].map(row => (
+                <tr key={row.key} className="border-b border-[#EEF3FA]">
+                  <td className="py-2 pr-4 text-[#4A5C6B] font-medium">{row.label}</td>
+                  {compared.map(a => (
+                    <td key={a.id} className="text-center py-2 px-3">{row.render(a)}</td>
+                  ))}
+                </tr>
+              ))}
+              <tr className="border-t-2 border-[#263746]">
+                <td className="py-2 pr-4 font-bold text-[#263746]">Blueprint Total</td>
+                {compared.map(a => {
+                  const total = BP_CATEGORIES.reduce((s, c) => s + (parseInt(a.blueprintRatings?.[c.key]) || 0), 0)
+                  const pct = total / (BP_CATEGORIES.length * 5)
+                  const color = pct >= 0.7 ? 'text-emerald-600' : pct >= 0.4 ? 'text-amber-600' : 'text-[#FF5E5B]'
+                  return <td key={a.id} className={`text-center py-2 px-3 font-bold ${color}`}>{total > 0 ? `${total}/${BP_CATEGORIES.length * 5}` : '—'}</td>
+                })}
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   )
@@ -491,6 +581,7 @@ export default function RoleTracker() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [sortBy, setSortBy] = useState('newest')
+  const [compareIds, setCompareIds] = useState([])
   const apps = data.applications || []
   const resumeVersions = data.resumeVersions || []
   const blueprint = data.blueprint || {}
@@ -543,6 +634,48 @@ export default function RoleTracker() {
   function quickAddTodo(appId, text) {
     setApps(apps.map(a => a.id === appId ? { ...a, todos: [...(a.todos || []), { id: Date.now(), text, done: false }] } : a))
   }
+  function duplicateApp(id) {
+    const app = apps.find(a => a.id === id)
+    if (!app) return
+    const dupe = { ...app, id: Date.now(), submittedDate: '', status: 'Not Started' }
+    const next = [...apps]
+    const idx = next.findIndex(a => a.id === id)
+    next.splice(idx + 1, 0, dupe)
+    setApps(next)
+  }
+  function toggleCompare(id) {
+    setCompareIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : prev.length < 4 ? [...prev, id] : prev)
+  }
+  function exportCSV() {
+    const headers = ['Company', 'Role', 'Status', 'Work Type', 'Location', 'Source', 'Submitted Date', 'Close Date', 'Follow-up Date', 'Salary Advertised', 'Salary Target', 'Blueprint Score', 'Outcome', 'Interview Date']
+    const rows = apps.map(a => {
+      const bpTotal = Object.values(a.blueprintRatings || {}).reduce((s, v) => s + (parseInt(v) || 0), 0)
+      return [
+        a.company || '',
+        a.jobRole || '',
+        a.status || '',
+        a.workType || '',
+        a.location || '',
+        a.source || '',
+        a.submittedDate || '',
+        a.closeDate || '',
+        a.followUpDate || '',
+        a.salaryAdvertised || '',
+        a.salaryTarget || '',
+        bpTotal > 0 ? `${bpTotal}/40` : '',
+        a.outcome || '',
+        a.interviewDate || '',
+      ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')
+    })
+    const csv = [headers.join(','), ...rows].join('\n')
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `applications-${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
 
   const pipelineCounts = {
     'Researching': apps.filter(a => a.status === 'Researching').length,
@@ -582,6 +715,12 @@ export default function RoleTracker() {
           <button onClick={() => setViewMode('cards')} className={`flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg cursor-pointer transition-colors ${viewMode === 'cards' ? 'bg-[#263746] text-white' : 'bg-white border border-[#D8E4EC] text-[#4A5C6B] hover:bg-[#F5F9FD]'}`} title="Card view"><LayoutGrid size={15} /></button>
           <button onClick={() => setViewMode('table')} className={`flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg cursor-pointer transition-colors ${viewMode === 'table' ? 'bg-[#263746] text-white' : 'bg-white border border-[#D8E4EC] text-[#4A5C6B] hover:bg-[#F5F9FD]'}`} title="Table view"><List size={15} /></button>
           <button onClick={() => setViewMode('kanban')} className={`flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg cursor-pointer transition-colors ${viewMode === 'kanban' ? 'bg-[#263746] text-white' : 'bg-white border border-[#D8E4EC] text-[#4A5C6B] hover:bg-[#F5F9FD]'}`} title="Board view"><Columns2 size={15} /></button>
+          <button onClick={() => setViewMode('timeline')} className={`flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg cursor-pointer transition-colors ${viewMode === 'timeline' ? 'bg-[#263746] text-white' : 'bg-white border border-[#D8E4EC] text-[#4A5C6B] hover:bg-[#F5F9FD]'}`} title="Timeline view"><Clock size={15} /></button>
+          {apps.length > 0 && (
+            <button onClick={exportCSV} className="flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg cursor-pointer transition-colors bg-white border border-[#D8E4EC] text-[#4A5C6B] hover:bg-[#F5F9FD]" title="Export CSV">
+              <Download size={15} /> CSV
+            </button>
+          )}
           <button onClick={addApp} className="flex items-center gap-2 bg-[#263746] hover:bg-[#1a2832] text-white text-sm font-medium px-4 py-2 rounded-lg cursor-pointer transition-colors">
             <Plus size={16} /> Log application
           </button>
@@ -598,7 +737,7 @@ export default function RoleTracker() {
             { label: 'Offer', count: pipelineCounts['Offer'], color: 'bg-emerald-50 text-emerald-700' },
           ].map(({ label, count, color }, i) => (
             <div key={label} className="flex items-center gap-1.5">
-              {i > 0 && <span className="text-[#D8E4EC] text-sm font-bold">›</span>}
+              {i > 0 && <span className="text-[#D8E4EC] text-sm font-bold">&#8250;</span>}
               <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${color}`}>{label} <span className="font-bold">{count}</span></span>
             </div>
           ))}
@@ -629,7 +768,7 @@ export default function RoleTracker() {
           >
             <option value="newest">Newest first</option>
             <option value="oldest">Oldest first</option>
-            <option value="company">Company A→Z</option>
+            <option value="company">Company A&#x2192;Z</option>
             <option value="closedate">Close date</option>
           </select>
           {(search || statusFilter !== 'all') && (
@@ -766,6 +905,15 @@ export default function RoleTracker() {
                   </div>
                   {app.submittedDate && <span className="text-xs text-[#7A8FA3] flex-shrink-0 hidden lg:block">{app.submittedDate}</span>}
                   <AlignmentPill ratings={app.blueprintRatings} />
+                  <input
+                    type="checkbox"
+                    checked={compareIds.includes(app.id)}
+                    onChange={e => { e.stopPropagation(); toggleCompare(app.id) }}
+                    className="accent-[#6D99F2] cursor-pointer"
+                    title="Add to comparison"
+                    onClick={e => e.stopPropagation()}
+                  />
+                  <button onClick={e => { e.stopPropagation(); duplicateApp(app.id) }} title="Duplicate" className="text-[#D8E4EC] hover:text-[#6D99F2] flex-shrink-0 cursor-pointer transition-colors"><Copy size={14} /></button>
                   <button onClick={e => { e.stopPropagation(); removeApp(app.id) }} className="text-[#D8E4EC] hover:text-[#FF5E5B] flex-shrink-0 cursor-pointer transition-colors"><Trash2 size={14} /></button>
                   <ChevronDown size={16} className={`text-[#7A8FA3] transition-transform flex-shrink-0 ${expanded === app.id ? 'rotate-180' : ''}`} />
                 </div>
@@ -830,6 +978,7 @@ export default function RoleTracker() {
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
                           <button onClick={() => setExpanded(isExpanded ? null : app.id)} className="text-[#7A8FA3] hover:text-[#263746] cursor-pointer transition-colors"><ChevronDown size={14} className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`} /></button>
+                          <button onClick={() => duplicateApp(app.id)} title="Duplicate" className="text-[#D8E4EC] hover:text-[#6D99F2] cursor-pointer transition-colors"><Copy size={13} /></button>
                           <button onClick={() => removeApp(app.id)} className="text-[#D8E4EC] hover:text-[#FF5E5B] cursor-pointer transition-colors"><Trash2 size={13} /></button>
                         </div>
                       </td>
@@ -855,6 +1004,59 @@ export default function RoleTracker() {
             </tbody>
           </table>
         </div>
+      )}
+
+      {/* Timeline view */}
+      {viewMode === 'timeline' && apps.length > 0 && (() => {
+        const events = []
+        apps.forEach(app => {
+          if (app.submittedDate) events.push({ date: app.submittedDate, type: 'Applied', app, label: `Applied to ${app.jobRole || 'Role'} at ${app.company || 'Company'}` })
+          if (app.interviewDate) events.push({ date: app.interviewDate, type: 'Interview', app, label: `Interview — ${app.jobRole || 'Role'} at ${app.company || 'Company'}` })
+          if (app.offerDate) events.push({ date: app.offerDate, type: 'Offer', app, label: `Offer received — ${app.company || 'Company'}` })
+        })
+        events.sort((a, b) => b.date.localeCompare(a.date))
+        if (events.length === 0) return (
+          <div className="text-center py-10 bg-white rounded-xl border border-[#D8E4EC]">
+            <p className="text-[#7A8FA3] text-sm">No dated events yet. Add submitted dates, interview dates or offer dates to see your timeline.</p>
+          </div>
+        )
+        const TYPE_COLORS = {
+          'Applied': { dot: 'bg-[#6D99F2]', text: 'text-[#6D99F2]', bg: 'bg-[#EEF3FA]' },
+          'Interview': { dot: 'bg-amber-400', text: 'text-amber-600', bg: 'bg-amber-50' },
+          'Offer': { dot: 'bg-emerald-500', text: 'text-emerald-600', bg: 'bg-emerald-50' },
+        }
+        return (
+          <div className="relative pl-8">
+            <div className="absolute left-3 top-0 bottom-0 w-0.5 bg-[#EEF3FA]" />
+            <div className="space-y-4">
+              {events.map((ev, i) => {
+                const c = TYPE_COLORS[ev.type]
+                return (
+                  <div key={i} className="relative">
+                    <div className={`absolute -left-6 top-3.5 w-3 h-3 rounded-full ${c.dot} border-2 border-white shadow-sm`} />
+                    <div className="bg-white rounded-xl border border-[#D8E4EC] px-4 py-3 hover:shadow-sm transition-shadow cursor-pointer" onClick={() => { setViewMode('cards'); setExpanded(ev.app.id) }}>
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${c.bg} ${c.text}`}>{ev.type}</span>
+                          <span className="text-sm font-semibold text-[#263746] truncate">{ev.label}</span>
+                        </div>
+                        <span className="text-xs text-[#7A8FA3] flex-shrink-0">{new Date(ev.date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                      </div>
+                      {(ev.app.workType || ev.app.location) && (
+                        <p className="text-xs text-[#7A8FA3] mt-1 ml-1">{[ev.app.workType, ev.app.location].filter(Boolean).join(' \xb7 ')}</p>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )
+      })()}
+
+      {/* Compare panel */}
+      {compareIds.length >= 2 && (
+        <ComparePanel apps={apps} compareIds={compareIds} onClose={() => setCompareIds([])} />
       )}
     </div>
   )

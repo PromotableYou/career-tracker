@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import { useData } from '../context/DataContext'
-import { CheckCircle2, Circle, Zap } from 'lucide-react'
+import { CheckCircle2, Circle, Zap, TableProperties, Layers } from 'lucide-react'
 
 const inputCls = "w-full border border-[#D8E4EC] rounded-lg px-2 py-1.5 text-xs text-[#263746] focus:outline-none focus:ring-2 focus:ring-[#6D99F2]/40 bg-white placeholder:text-[#7A8FA3]"
 
@@ -87,6 +88,7 @@ export default function WeeklyCheckin() {
   const { data, update } = useData()
   const checkins = data.weeklyCheckins || []
   const applications = data.applications || []
+  const [showSummary, setShowSummary] = useState(false)
 
   function upd(id, field, value) {
     update('weeklyCheckins', checkins.map(c => c.id === id ? { ...c, [field]: value } : c))
@@ -101,9 +103,19 @@ export default function WeeklyCheckin() {
 
   return (
     <div className="max-w-3xl">
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-[#263746] mb-1 font-['Inter']">Weekly Check-In</h2>
-        <p className="text-sm text-[#7A8FA3]">12 weeks of structured reflection. Fill in every Friday.</p>
+      <div className="flex items-start justify-between mb-6">
+        <div>
+          <h2 className="text-2xl font-bold text-[#263746] mb-1 font-['Inter']">Weekly Check-In</h2>
+          <p className="text-sm text-[#7A8FA3]">12 weeks of structured reflection. Fill in every Friday.</p>
+        </div>
+        {completed >= 2 && (
+          <button
+            onClick={() => setShowSummary(s => !s)}
+            className={`flex items-center gap-2 text-xs font-semibold px-3 py-2 rounded-lg cursor-pointer transition-colors border ${showSummary ? 'bg-[#263746] text-white border-[#263746]' : 'bg-white text-[#4A5C6B] border-[#D8E4EC] hover:bg-[#EEF3FA]'}`}
+          >
+            {showSummary ? <><Layers size={13} /> Week cards</> : <><TableProperties size={13} /> Summary view</>}
+          </button>
+        )}
       </div>
 
       {/* Progress bar + sparkline */}
@@ -125,7 +137,57 @@ export default function WeeklyCheckin() {
         )}
       </div>
 
-      <div className="space-y-4">
+      {/* Summary table view */}
+      {showSummary && (
+        <div className="bg-white rounded-xl border border-[#D8E4EC] overflow-x-auto mb-6">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="bg-[#F8F5F2] border-b border-[#EEF3FA]">
+                <th className="text-left px-4 py-3 font-semibold text-[#4A5C6B]">Week</th>
+                <th className="text-left px-4 py-3 font-semibold text-[#4A5C6B]">Date</th>
+                <th className="text-center px-3 py-3 font-semibold text-[#4A5C6B]">Apps</th>
+                <th className="text-center px-3 py-3 font-semibold text-[#4A5C6B]">Network</th>
+                <th className="text-center px-3 py-3 font-semibold text-[#4A5C6B]">Interviews</th>
+                <th className="text-center px-3 py-3 font-semibold text-[#4A5C6B]">Energy</th>
+                <th className="text-left px-4 py-3 font-semibold text-[#4A5C6B]">Went well</th>
+                <th className="text-left px-4 py-3 font-semibold text-[#4A5C6B]">Focus next week</th>
+                <th className="text-center px-3 py-3 font-semibold text-[#4A5C6B]">Done</th>
+              </tr>
+            </thead>
+            <tbody>
+              {checkins.map(c => {
+                const hasData = c.submitted || c.appsSubmitted || c.wentWell || c.focusNextWeek || c.energyLevel
+                if (!hasData) return null
+                return (
+                  <tr key={c.id} className={`border-b border-[#EEF3FA] ${c.submitted ? 'bg-[#F8FBFD]' : ''}`}>
+                    <td className="px-4 py-2.5 font-bold text-[#6D99F2]">W{c.id}</td>
+                    <td className="px-4 py-2.5 text-[#7A8FA3] whitespace-nowrap">{c.weekOf || '—'}</td>
+                    <td className="px-3 py-2.5 text-center font-semibold text-[#263746]">{c.appsSubmitted || '—'}</td>
+                    <td className="px-3 py-2.5 text-center text-[#263746]">{c.networkingActions || '—'}</td>
+                    <td className="px-3 py-2.5 text-center text-[#263746]">{c.interviewsScheduled || '—'}</td>
+                    <td className="px-3 py-2.5 text-center">
+                      {c.energyLevel ? (
+                        <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold border ${ENERGY_COLORS[c.energyLevel] || ''}`}>{c.energyLevel}</span>
+                      ) : '—'}
+                    </td>
+                    <td className="px-4 py-2.5 text-[#4A5C6B] max-w-[160px]">
+                      <span className="truncate block" title={c.wentWell}>{c.wentWell ? c.wentWell.slice(0, 50) + (c.wentWell.length > 50 ? '…' : '') : '—'}</span>
+                    </td>
+                    <td className="px-4 py-2.5 text-[#4A5C6B] max-w-[160px]">
+                      <span className="truncate block" title={c.focusNextWeek}>{c.focusNextWeek ? c.focusNextWeek.slice(0, 50) + (c.focusNextWeek.length > 50 ? '…' : '') : '—'}</span>
+                    </td>
+                    <td className="px-3 py-2.5 text-center">
+                      {c.submitted ? <CheckCircle2 size={14} className="text-[#6D99F2] mx-auto" /> : <Circle size={14} className="text-[#D8E4EC] mx-auto" />}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <div className={`space-y-4 ${showSummary ? 'hidden' : ''}`}>
         {checkins.map(c => {
           const trackerCount = c.weekOf ? countAppsForWeek(applications, c.weekOf) : null
           const showAutoFill = trackerCount !== null && trackerCount > 0 && trackerCount !== c.appsSubmitted

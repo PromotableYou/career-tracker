@@ -274,12 +274,10 @@ export default function MyProfile() {
                 <label className="block text-sm font-medium text-[#263746] mb-1">LinkedIn URL</label>
                 <input className={inputCls} type="url" value={profile.linkedinUrl} onChange={e => setProfile('linkedinUrl', e.target.value)} placeholder="https://linkedin.com/in/you" />
               </div>
-              {profile.ninetyDayGoal && (
-                <div>
-                  <label className="block text-sm font-medium text-[#263746] mb-1">90-Day Goal</label>
-                  <textarea className={inputCls} rows={2} value={profile.ninetyDayGoal} onChange={e => setProfile('ninetyDayGoal', e.target.value)} />
-                </div>
-              )}
+              <div>
+                <label className="block text-sm font-medium text-[#263746] mb-1">90-Day Goal</label>
+                <textarea className={inputCls} rows={2} value={profile.ninetyDayGoal || ''} onChange={e => setProfile('ninetyDayGoal', e.target.value)} placeholder="What do you want to achieve in the next 90 days? e.g. Land a senior PM role at a purpose-driven company." />
+              </div>
             </div>
           </div>
 

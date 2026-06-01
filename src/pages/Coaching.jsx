@@ -5,7 +5,7 @@ const SESSION_TYPES = ['General Q&A','Confidence & Clarity','Group Coaching','Re
 const inputCls = "w-full border border-[#D8E4EC] rounded-lg px-2 py-1.5 text-xs text-[#263746] focus:outline-none focus:ring-2 focus:ring-[#6D99F2]/40 bg-white placeholder:text-[#7A8FA3]"
 
 function newSession() {
-  return { id: Date.now(), date: '', type: '', breakoutRoom: '', takeaway: '', nextStep: '', done: false }
+  return { id: Date.now(), date: '', type: '', breakoutRoom: '', takeaway: '', nextStep: '', done: false, commitments: [] }
 }
 
 export default function Coaching() {
@@ -16,6 +16,9 @@ export default function Coaching() {
   function add() { set([...sessions, newSession()]) }
   function remove(id) { set(sessions.filter(s => s.id !== id)) }
   function upd(id, field, value) { set(sessions.map(s => s.id === id ? { ...s, [field]: value } : s)) }
+  function addCommitment(id) { set(sessions.map(s => s.id === id ? { ...s, commitments: [...(s.commitments || []), { id: Date.now(), text: '', done: false }] } : s)) }
+  function updCommitment(id, cId, field, value) { set(sessions.map(s => s.id === id ? { ...s, commitments: (s.commitments || []).map(c => c.id === cId ? { ...c, [field]: value } : c) } : s)) }
+  function removeCommitment(id, cId) { set(sessions.map(s => s.id === id ? { ...s, commitments: (s.commitments || []).filter(c => c.id !== cId) } : s)) }
 
   return (
     <div className="max-w-3xl">
@@ -86,6 +89,35 @@ export default function Coaching() {
                     </button>
                   </div>
                 </div>
+
+                {/* Commitments / Action Items */}
+                <div className="col-span-2 border-t border-[#EEF3FA] pt-4 mt-1">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-xs font-semibold text-[#4A5C6B] uppercase tracking-wide">Commitments</label>
+                    <button onClick={() => addCommitment(s.id)} className="flex items-center gap-1 text-xs text-[#6D99F2] hover:text-[#263746] cursor-pointer font-medium transition-colors">
+                      <Plus size={11} /> Add
+                    </button>
+                  </div>
+                  {(s.commitments || []).length === 0 ? (
+                    <p className="text-xs text-[#7A8FA3] italic">What did you commit to? Log it here so you stay accountable.</p>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {(s.commitments || []).map(c => (
+                        <div key={c.id} className="flex items-center gap-2 py-1">
+                          <input type="checkbox" checked={c.done} onChange={e => updCommitment(s.id, c.id, 'done', e.target.checked)} className="accent-[#263746]" />
+                          <input
+                            className={`flex-1 bg-transparent text-xs focus:outline-none border-b border-dashed border-[#D8E4EC] focus:border-[#6D99F2] placeholder:text-[#7A8FA3] ${c.done ? 'line-through text-[#7A8FA3]' : 'text-[#263746]'}`}
+                            value={c.text}
+                            onChange={e => updCommitment(s.id, c.id, 'text', e.target.value)}
+                            placeholder="e.g. Update LinkedIn headline by Friday"
+                          />
+                          <button onClick={() => removeCommitment(s.id, c.id)} className="text-[#D8E4EC] hover:text-[#FF5E5B] cursor-pointer transition-colors"><Trash2 size={12} /></button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
               </div>
             </div>
           </div>
