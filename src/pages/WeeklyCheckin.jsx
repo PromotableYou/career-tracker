@@ -26,8 +26,7 @@ export default function WeeklyCheckin() {
     <div className="max-w-3xl">
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-[#263746] mb-1 font-['Inter']">Weekly Check-In</h2>
-        <p className="text-sm text-[#5A7080] italic font-['Playfair_Display']">12 weeks of structured reflection. Fill in every Friday.</p>
-        <p className="text-xs text-[#A8BCC8] mt-1.5">No required fields — use as much or as little as works for you. The more detail you add, the better your results.</p>
+        <p className="text-sm text-[#7A8FA3]">12 weeks of structured reflection. Fill in every Friday.</p>
       </div>
 
       <div className="bg-white rounded-xl border border-[#D8E4EC] px-5 py-4 mb-6 flex items-center gap-4">

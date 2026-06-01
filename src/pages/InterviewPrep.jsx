@@ -127,8 +127,7 @@ export default function InterviewPrep() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-2xl font-bold text-[#263746] mb-1 font-['Inter']">Interview Prep</h2>
-          <p className="text-sm text-[#5A7080] italic font-['Playfair_Display']">Plan it before. Show up inside. Debrief after.</p>
-          <p className="text-xs text-[#A8BCC8] mt-1.5">No required fields — use as much or as little as works for you. The more detail you add, the better your results.</p>
+          <p className="text-sm text-[#7A8FA3]">Plan it before. Show up inside. Debrief after.</p>
         </div>
         <button onClick={add} className="flex items-center gap-2 bg-[#263746] hover:bg-[#1a2832] text-white text-sm font-medium px-4 py-2 rounded-lg cursor-pointer transition-colors">
           <Plus size={16} /> Add interview
@@ -268,8 +267,8 @@ export default function InterviewPrep() {
       <div className="mt-10">
         <div className="flex items-center justify-between mb-2">
           <div>
-            <h2 className="text-xl font-bold text-[#263746] font-['Inter']">Question Bank</h2>
-            <p className="text-sm text-[#5A7080] italic font-['Playfair_Display']">Build your answer library. Rate your confidence on each one.</p>
+            <h3 className="text-base font-semibold text-[#263746] font-['Inter']">Question Bank</h3>
+            <p className="text-sm text-[#7A8FA3]">Build your answer library. Rate your confidence on each one.</p>
           </div>
           <div className="flex gap-2">
             {questions.length === 0 && (

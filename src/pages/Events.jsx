@@ -84,10 +84,9 @@ export default function Events() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-2xl font-bold text-[#263746] mb-1 font-['Inter']">Professional Development</h2>
-          <p className="text-sm text-[#5A7080] italic font-['Playfair_Display']">
+          <p className="text-sm text-[#7A8FA3]">
             Track your learning, events, associations and growth outside of job applications.
           </p>
-          <p className="text-xs text-[#A8BCC8] mt-1.5">No required fields — use as much or as little as works for you. The more detail you add, the better your results.</p>
         </div>
         <button
           onClick={add}

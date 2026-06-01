@@ -190,8 +190,7 @@ export default function MyProfile() {
     <div className="max-w-4xl">
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-[#263746] mb-1 font-['Inter']">My Profile</h2>
-        <p className="text-sm text-[#5A7080] italic font-['Playfair_Display']">Your foundations, your resumes, your blueprint. Everything in one place.</p>
-        <p className="text-xs text-[#A8BCC8] mt-1.5">No required fields — use as much or as little as works for you. The more detail you add, the better your results.</p>
+        <p className="text-sm text-[#7A8FA3]">Your foundations, your resumes, your blueprint. Everything in one place.</p>
       </div>
 
       {/* Tabs */}

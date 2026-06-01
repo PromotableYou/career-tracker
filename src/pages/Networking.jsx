@@ -93,8 +93,7 @@ export default function Networking() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-2xl font-bold text-[#263746] mb-1 font-['Inter']">Networking</h2>
-          <p className="text-sm text-[#5A7080] italic font-['Playfair_Display']">Your network map. Who you know, how you know them, relationship depth.</p>
-          <p className="text-xs text-[#A8BCC8] mt-1.5">No required fields — use as much or as little as works for you. The more detail you add, the better your results.</p>
+          <p className="text-sm text-[#7A8FA3]">Your network map. Who you know, how you know them, relationship depth.</p>
         </div>
         <button onClick={add} className="flex items-center gap-2 bg-[#263746] hover:bg-[#1a2832] text-white text-sm font-medium px-4 py-2 rounded-lg cursor-pointer transition-colors">
           <Plus size={16} /> Add contact
