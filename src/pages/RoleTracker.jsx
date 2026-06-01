@@ -490,6 +490,7 @@ export default function RoleTracker() {
         <div>
           <h2 className="text-2xl font-bold text-[#263746] mb-1 font-['Inter']">Role Tracker</h2>
           <p className="text-sm text-[#5A7080] italic font-['Playfair_Display']">Every application. Log it, track it, close it.</p>
+          <p className="text-xs text-[#A8BCC8] mt-1.5">No required fields — use as much or as little as works for you. The more detail you add, the better your results.</p>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => setViewMode('cards')} className={`flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg cursor-pointer transition-colors ${viewMode === 'cards' ? 'bg-[#263746] text-white' : 'bg-white border border-[#D8E4EC] text-[#4A5C6B] hover:bg-[#F5F9FD]'}`} title="Card view"><LayoutGrid size={15} /></button>

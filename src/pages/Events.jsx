@@ -87,6 +87,7 @@ export default function Events() {
           <p className="text-sm text-[#5A7080] italic font-['Playfair_Display']">
             Track your learning, events, associations and growth outside of job applications.
           </p>
+          <p className="text-xs text-[#A8BCC8] mt-1.5">No required fields — use as much or as little as works for you. The more detail you add, the better your results.</p>
         </div>
         <button
           onClick={add}
