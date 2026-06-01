@@ -100,10 +100,10 @@ export default function WeeklyCheckin() {
   function toggle(id) { setExpanded(expanded === id ? null : id) }
   function autoFillApps(id, weekOf) { upd(id, 'appsSubmitted', countAppsForWeek(applications, weekOf)) }
 
-  // Sort newest first for display, oldest first for week numbering
+  // Sort oldest first for display (Week 1 at top), oldest first for week numbering
   const sorted = [...checkins].sort((a, b) => {
-    if (a.weekOf && b.weekOf) return b.weekOf.localeCompare(a.weekOf)
-    return b.id - a.id
+    if (a.weekOf && b.weekOf) return a.weekOf.localeCompare(b.weekOf)
+    return a.id - b.id
   })
   const weekNums = [...checkins]
     .sort((a, b) => { if (a.weekOf && b.weekOf) return a.weekOf.localeCompare(b.weekOf); return a.id - b.id })
