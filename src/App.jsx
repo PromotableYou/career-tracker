@@ -38,7 +38,7 @@ const PAGES = {
 }
 
 function EmbedLayout({ page, navigate, Page }) {
-  const { data } = useData()
+  const { data, uid } = useData()
   const [query, setQuery] = useState('')
   const [results, setResults] = useState([])
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
@@ -88,7 +88,7 @@ function EmbedLayout({ page, navigate, Page }) {
         ))}
       </nav>
       <div className="px-4 py-3 border-t border-[#D8E4EC]">
-        <p className="text-[10px] text-[#7A8FA3]">Data saved in your browser</p>
+        <p className="text-[10px] text-[#7A8FA3]">{uid ? '☁️ Data synced to your account' : 'Data saved in your browser'}</p>
       </div>
     </>
   )
@@ -175,7 +175,7 @@ function EmbedLayout({ page, navigate, Page }) {
 }
 
 function AppInner() {
-  const { loading, hasAccess } = useData()
+  const { loading, hasAccess, uid } = useData()
   const [page, setPage] = useState('dashboard')
   const [open, setOpen] = useState(false)
   const Page = PAGES[page]
@@ -195,7 +195,9 @@ function AppInner() {
   if (hasAccess === null) return <NoAccess />
 
   const { data, updateNested } = useData()
-  if (!data.profile?.onboardingComplete) {
+  // Skip onboarding if they've explicitly completed it, OR if they already have profile data (existing users)
+  const skipOnboarding = data.profile?.onboardingComplete || !!data.profile?.name
+  if (!skipOnboarding) {
     return <Onboarding onComplete={() => updateNested('profile', 'onboardingComplete', true)} />
   }
 
@@ -268,7 +270,7 @@ function AppInner() {
             ))}
           </nav>
           <div className="px-5 py-4 border-t border-[#D8E4EC]">
-            <p className="text-xs text-[#7A8FA3]">Data saved locally in your browser</p>
+            <p className="text-xs text-[#7A8FA3]">{uid ? '☁️ Data synced to your account' : 'Data saved locally in your browser'}</p>
           </div>
         </div>
 

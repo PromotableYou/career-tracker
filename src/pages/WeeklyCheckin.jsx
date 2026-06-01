@@ -3,7 +3,7 @@ import { CheckCircle2, Circle, BookOpen } from 'lucide-react'
 
 const MODULE_SUGGESTIONS = {
   1: { module: 'Your First 3 Steps', tip: 'Have you watched the Welcome video and read the Winning Applicants Formula? Do this before anything else.' },
-  2: { module: 'Career Blueprint Builder', tip: 'By week 2 your Career Blueprint should be complete. It's the foundation everything else is built on.' },
+  2: { module: 'Career Blueprint Builder', tip: "By week 2 your Career Blueprint should be complete. It's the foundation everything else is built on." },
   3: { module: 'Get Role Clarity', tip: 'Have you completed the Get Role Clarity module? Make sure you\'re targeting the right roles before ramping up applications.' },
   4: { module: 'Creating your UVP', tip: 'Week 4 — time to lock in your Unique Value Proposition. This should be in every application and message you send.' },
   5: { module: 'Expert Resume Writing', tip: 'Is your resume doing the heavy lifting? Revisit the Expert Resume Writing module if you\'re not getting callbacks.' },
