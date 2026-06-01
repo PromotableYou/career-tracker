@@ -91,9 +91,13 @@ export default function LinkedIn() {
       </div>
 
       {outreach.length === 0 && (
-        <div className="bg-white rounded-xl border border-[#D8E4EC] p-12 text-center">
+        <div className="bg-white rounded-xl border border-[#D8E4EC] p-10 text-center">
           <div className="text-4xl mb-3">💬</div>
-          <p className="text-[#7A8FA3] text-sm">No outreach logged yet.</p>
+          <p className="text-[#263746] font-semibold text-base mb-2">Track every message you send</p>
+          <p className="text-[#7A8FA3] text-sm max-w-md mx-auto leading-relaxed mb-5">Log each LinkedIn connection request, follow-up, and conversation. It keeps you accountable, tracks response rates, and makes sure no one slips through the cracks.</p>
+          <button onClick={addOutreach} className="inline-flex items-center gap-2 bg-[#263746] hover:bg-[#1a2832] text-white text-sm font-medium px-5 py-2.5 rounded-lg cursor-pointer transition-colors">
+            <Plus size={16} /> Log your first outreach
+          </button>
         </div>
       )}
 

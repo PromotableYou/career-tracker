@@ -3,8 +3,9 @@ import { useData } from '../context/DataContext'
 import {
   Briefcase, Users, TrendingUp, AlertCircle,
   CheckCircle, Clock, Target, Plus, Trophy, ClipboardList,
-  CalendarCheck, ArrowRight, Sparkles
+  CalendarCheck, ArrowRight, Sparkles, FileDown
 } from 'lucide-react'
+import jsPDF from 'jspdf'
 
 const QUOTES = [
   "You don't have to be ready. You have to be willing.",
@@ -153,6 +154,18 @@ export default function Dashboard({ navigate }) {
   const wins = data.wins || []
   const roleFit = getRoleFitScore(applications)
 
+  const upcomingInterviews = applications.filter(a => {
+    if (!a.interviewDate) return false
+    const msUntil = new Date(a.interviewDate) - Date.now()
+    return msUntil >= 0 && msUntil <= 7 * 86400000
+  }).sort((a, b) => a.interviewDate.localeCompare(b.interviewDate))
+
+  const networkNudges = (networking || []).filter(n => {
+    if ((n.status || 'Active') !== 'Active') return false
+    if (!n.lastContact) return false
+    return (Date.now() - new Date(n.lastContact)) / 86400000 > 30
+  }).sort((a, b) => new Date(a.lastContact) - new Date(b.lastContact)).slice(0, 3)
+
   const fitColor = roleFit?.color === 'emerald' ? '#10b981' : roleFit?.color === 'amber' ? '#f59e0b' : '#FF5E5B'
   const fitBg = roleFit?.color === 'emerald' ? 'bg-emerald-50' : roleFit?.color === 'amber' ? 'bg-amber-50' : 'bg-red-50'
   const fitText = roleFit?.color === 'emerald' ? 'text-emerald-600' : roleFit?.color === 'amber' ? 'text-amber-600' : 'text-red-500'
@@ -167,6 +180,76 @@ export default function Dashboard({ navigate }) {
     setNewWin('')
   }
   function removeWin(id) { update('wins', wins.filter(w => w.id !== id)) }
+
+  function generateSummaryPDF() {
+    const doc = new jsPDF()
+    const today = new Date()
+    const weekStart = new Date(today - 7 * 86400000)
+    const fmt = d => d.toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' })
+    const name = profile.name || 'Member'
+
+    let y = 20
+
+    doc.setFillColor(38, 55, 70)
+    doc.rect(0, 0, 210, 40, 'F')
+    doc.setTextColor(255, 255, 255)
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(18)
+    doc.text('Weekly Job Search Summary', 20, 18)
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'normal')
+    doc.text(`${name}  ·  Week of ${fmt(weekStart)} – ${fmt(today)}`, 20, 30)
+    y = 55
+
+    doc.setTextColor(38, 55, 70)
+    const section = (title) => {
+      doc.setFillColor(238, 243, 250)
+      doc.rect(15, y - 5, 180, 8, 'F')
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(9)
+      doc.setTextColor(109, 153, 242)
+      doc.text(title.toUpperCase(), 18, y + 0.5)
+      doc.setTextColor(38, 55, 70)
+      y += 10
+    }
+    const row = (label, value) => {
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(10)
+      doc.setTextColor(74, 92, 107)
+      doc.text(label, 20, y)
+      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(38, 55, 70)
+      doc.text(String(value || '—'), 120, y)
+      y += 8
+    }
+
+    section('This Week')
+    row('Applications submitted', appsWeek)
+    row('Networking actions', networkingWeek)
+    row('Weekly target', profile.weeklyAppTarget || 5)
+    row('Day streak', streak)
+    y += 4
+
+    const thisWeekCheckin = (weeklyCheckins || []).find(c => c.submitted && c.weekOf && c.weekOf >= weekStart.toISOString().slice(0, 10))
+    section('Weekly Check-In')
+    row('Submitted', thisWeekCheckin ? 'Yes' : 'Not yet')
+    if (thisWeekCheckin?.wentWell) { row('What went well', ''); doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(74, 92, 107); const lines = doc.splitTextToSize(thisWeekCheckin.wentWell, 160); doc.text(lines, 22, y); y += lines.length * 5 + 2 }
+    if (thisWeekCheckin?.focusNextWeek) { row('Focus next week', ''); doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(74, 92, 107); const lines = doc.splitTextToSize(thisWeekCheckin.focusNextWeek, 160); doc.text(lines, 22, y); y += lines.length * 5 + 2 }
+    y += 4
+
+    section('Wins Logged')
+    const recentWins = wins.filter(w => w.date >= weekStart.toISOString().slice(0, 10))
+    if (recentWins.length === 0) { doc.setFont('helvetica', 'italic'); doc.setFontSize(10); doc.setTextColor(168, 188, 200); doc.text('No wins logged this week', 20, y); y += 8 }
+    else recentWins.forEach(w => { doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(38, 55, 70); doc.text(`★  ${w.text}`, 20, y); y += 7 })
+    y += 4
+
+    section('Upcoming Interviews')
+    if (upcomingInterviews.length === 0) { doc.setFont('helvetica', 'italic'); doc.setFontSize(10); doc.setTextColor(168, 188, 200); doc.text('None scheduled', 20, y); y += 8 }
+    else upcomingInterviews.forEach(iv => { row(`${iv.company || 'Company'} — ${iv.jobRole || 'Role'}`, iv.interviewDate) })
+
+    doc.save(`weekly-summary-${today.toISOString().slice(0, 10)}.pdf`)
+  }
+
   function markFollowUpDone(id) {
     update('applications', applications.map(a => a.id === id ? { ...a, followUpDone: true } : a))
   }
@@ -194,6 +277,15 @@ export default function Dashboard({ navigate }) {
           {profile.name ? `Hey ${profile.name.split(' ')[0]} 👋` : 'Welcome back 👋'}
         </h1>
         <p className="text-lg text-[#8FA3B3] italic font-['Playfair_Display']">"{getQuote()}"</p>
+        <div className="flex justify-end mt-2">
+          <button
+            onClick={generateSummaryPDF}
+            className="flex items-center gap-2 text-xs font-semibold text-[#7A8FA3] hover:text-[#263746] bg-white border border-[#E4EDF5] px-4 py-2 rounded-xl cursor-pointer transition-colors hover:shadow-sm"
+          >
+            <FileDown size={13} />
+            Coach summary PDF
+          </button>
+        </div>
       </div>
 
       {/* ── MILESTONES ────────────────────────────────────────── */}
@@ -371,13 +463,36 @@ export default function Dashboard({ navigate }) {
       </div>
 
       {/* ── NUDGES (check-in + follow-ups + module prompts) ───── */}
-      {(checkinOverdue || overdueFollowUps.length > 0 || modulePrompts.length > 0) && (
+      {(upcomingInterviews.length > 0 || checkinOverdue || overdueFollowUps.length > 0 || modulePrompts.length > 0 || networkNudges.length > 0) && (
         <div className="bg-white rounded-3xl border border-[#E4EDF5] p-6 mb-6">
           <div className="flex items-center gap-2 mb-4">
             <Sparkles size={15} className="text-[#D4AF37]" />
             <p className="text-xs font-bold text-[#263746] uppercase tracking-widest">On your radar</p>
           </div>
           <div className="space-y-3">
+
+            {/* Upcoming interviews */}
+            {upcomingInterviews.map(iv => {
+              const daysUntil = Math.ceil((new Date(iv.interviewDate) - Date.now()) / 86400000)
+              return (
+                <div key={iv.id} className="flex items-center gap-4 bg-[#EEF3FA] border border-[#D0E4F8] rounded-2xl px-5 py-4">
+                  <div className="w-11 h-11 rounded-xl bg-[#6D99F2] flex flex-col items-center justify-center flex-shrink-0">
+                    <span className="text-white text-xl font-black leading-none">{daysUntil === 0 ? '!' : daysUntil}</span>
+                    <span className="text-white/70 text-[9px] leading-none mt-0.5">{daysUntil === 0 ? 'today' : 'days'}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-[#263746]">Interview — {iv.company || 'Company'}</p>
+                    <p className="text-xs text-[#5A7080] mt-0.5">
+                      {iv.jobRole && <span className="font-medium">{iv.jobRole} · </span>}
+                      {daysUntil === 0 ? 'Today!' : daysUntil === 1 ? 'Tomorrow' : new Date(iv.interviewDate).toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' })}
+                    </p>
+                  </div>
+                  <button onClick={() => navigate('interviews')} className="text-xs font-semibold text-[#6D99F2] bg-white border border-[#D0E4F8] px-3 py-2 rounded-xl cursor-pointer hover:bg-[#EEF3FA] transition-colors flex-shrink-0">
+                    Prep now →
+                  </button>
+                </div>
+              )
+            })}
 
             {/* Check-in overdue */}
             {checkinOverdue && (
@@ -430,6 +545,25 @@ export default function Dashboard({ navigate }) {
                 </div>
               </div>
             ))}
+
+            {/* Networking nudges */}
+            {networkNudges.map(n => {
+              const daysSince = Math.floor((Date.now() - new Date(n.lastContact)) / 86400000)
+              return (
+                <div key={n.id} className="flex items-center gap-4 px-5 py-4 bg-[#F8FBFD] border border-[#EEF3FA] rounded-2xl">
+                  <div className="w-9 h-9 rounded-full bg-[#EEF3FA] flex items-center justify-center text-sm font-bold text-[#6D99F2] flex-shrink-0">
+                    {n.person ? n.person.charAt(0).toUpperCase() : '?'}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-[#263746]">{n.person || 'Contact'}</p>
+                    <p className="text-xs text-[#7A8FA3] mt-0.5">Last contact {daysSince} days ago — time to reconnect</p>
+                  </div>
+                  <button onClick={() => navigate('networking')} className="text-xs font-semibold text-[#6D99F2] cursor-pointer hover:underline flex-shrink-0">
+                    View →
+                  </button>
+                </div>
+              )
+            })}
 
           </div>
         </div>

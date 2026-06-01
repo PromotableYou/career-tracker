@@ -31,9 +31,13 @@ export default function Coaching() {
       </div>
 
       {sessions.length === 0 && (
-        <div className="bg-white rounded-xl border border-[#D8E4EC] p-12 text-center">
+        <div className="bg-white rounded-xl border border-[#D8E4EC] p-10 text-center">
           <div className="text-4xl mb-3">🎓</div>
-          <p className="text-[#7A8FA3] text-sm">No sessions logged yet. Log within 24 hours of attending.</p>
+          <p className="text-[#263746] font-semibold text-base mb-2">Log every coaching session</p>
+          <p className="text-[#7A8FA3] text-sm max-w-md mx-auto leading-relaxed mb-5">Add your session within 24 hours while it's still fresh. One key takeaway and one next step is all you need — don't let the insight slip away.</p>
+          <button onClick={add} className="inline-flex items-center gap-2 bg-[#263746] hover:bg-[#1a2832] text-white text-sm font-medium px-5 py-2.5 rounded-lg cursor-pointer transition-colors">
+            <Plus size={16} /> Log your first session
+          </button>
         </div>
       )}
 

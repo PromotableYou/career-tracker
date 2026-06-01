@@ -121,9 +121,13 @@ export default function Events() {
 
       {/* Empty state */}
       {entries.length === 0 && (
-        <div className="bg-white rounded-xl border border-[#D8E4EC] p-12 text-center">
-          <div className="text-4xl mb-3">🎓</div>
-          <p className="text-[#7A8FA3] text-sm">No activities tracked yet. Add events, courses, books, and more.</p>
+        <div className="bg-white rounded-xl border border-[#D8E4EC] p-10 text-center">
+          <div className="text-4xl mb-3">📚</div>
+          <p className="text-[#263746] font-semibold text-base mb-2">Track your professional growth</p>
+          <p className="text-[#7A8FA3] text-sm max-w-md mx-auto leading-relaxed mb-5">Log events, webinars, courses, books, and memberships. It shows interviewers you're invested in your development — and helps you remember what you've learned.</p>
+          <button onClick={add} className="inline-flex items-center gap-2 bg-[#263746] hover:bg-[#1a2832] text-white text-sm font-medium px-5 py-2.5 rounded-lg cursor-pointer transition-colors">
+            <Plus size={16} /> Add your first activity
+          </button>
         </div>
       )}
 

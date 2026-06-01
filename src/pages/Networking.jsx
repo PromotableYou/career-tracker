@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useData } from '../context/DataContext'
-import { Plus, Trash2, ChevronDown, ChevronUp, MapPin } from 'lucide-react'
+import { Plus, Trash2, ChevronDown, ChevronUp, MapPin, Copy } from 'lucide-react'
 
 const TYPE_OPTIONS = ['','Peer','Mentor','Recruiter','Hiring Manager','Alumni','Former colleague','Industry contact','LinkedIn connection','Other']
 const DEPTH_OPTIONS = ['','Weak tie','Acquaintance','Established','Strong']
@@ -27,11 +27,36 @@ const DEPTH_COLORS = {
   'Strong': 'bg-emerald-100 text-emerald-700',
 }
 
+function TemplateCard({ title, body }) {
+  const [copied, setCopied] = useState(false)
+  function copy() {
+    navigator.clipboard.writeText(body)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+  return (
+    <div className="bg-white border border-[#E4EDF5] rounded-2xl p-5">
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-sm font-bold text-[#263746]">{title}</p>
+        <button
+          onClick={copy}
+          className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg cursor-pointer transition-colors ${copied ? 'bg-emerald-50 text-emerald-600' : 'bg-[#EEF3FA] text-[#6D99F2] hover:bg-[#263746] hover:text-white'}`}
+        >
+          <Copy size={11} />
+          {copied ? 'Copied!' : 'Copy'}
+        </button>
+      </div>
+      <p className="text-xs text-[#7A8FA3] leading-relaxed whitespace-pre-line">{body}</p>
+    </div>
+  )
+}
+
 export default function Networking() {
   const { data, update } = useData()
   const contacts = data.networking || []
   const [expanded, setExpanded] = useState(null)
   const [statusFilter, setStatusFilter] = useState('All')
+  const [showTemplates, setShowTemplates] = useState(false)
 
   function set(next) { update('networking', next) }
   function add() {
@@ -93,9 +118,13 @@ export default function Networking() {
       )}
 
       {contacts.length === 0 && (
-        <div className="bg-white rounded-xl border border-[#D8E4EC] p-12 text-center">
+        <div className="bg-white rounded-xl border border-[#D8E4EC] p-10 text-center mb-6">
           <div className="text-4xl mb-3">🤝</div>
-          <p className="text-[#7A8FA3] text-sm">No contacts yet. Start building your network map.</p>
+          <p className="text-[#263746] font-semibold text-base mb-2">Start your network map</p>
+          <p className="text-[#7A8FA3] text-sm max-w-md mx-auto leading-relaxed">Add hiring managers, recruiters, alumni, colleagues, and anyone who can open doors. Even a weak tie can lead to your next role.</p>
+          <button onClick={add} className="mt-5 inline-flex items-center gap-2 bg-[#263746] hover:bg-[#1a2832] text-white text-sm font-medium px-5 py-2.5 rounded-lg cursor-pointer transition-colors">
+            <Plus size={16} /> Add your first contact
+          </button>
         </div>
       )}
 
@@ -263,6 +292,49 @@ export default function Networking() {
           <button onClick={add} className="text-[#6D99F2] hover:underline cursor-pointer">+ Add contact</button>
         </div>
       )}
+
+      {/* Message Templates */}
+      <div className="mt-8">
+        <button
+          onClick={() => setShowTemplates(t => !t)}
+          className="flex items-center gap-2 text-sm font-semibold text-[#263746] mb-4 cursor-pointer"
+        >
+          <span>💬 Message Templates</span>
+          <ChevronDown size={15} className={`text-[#7A8FA3] transition-transform ${showTemplates ? 'rotate-180' : ''}`} />
+        </button>
+        {showTemplates && (
+          <div className="grid sm:grid-cols-2 gap-4">
+            {[
+              {
+                title: 'Cold connection request',
+                body: `Hi [Name],\n\nI came across your profile while researching [Company/Industry]. I'm currently exploring opportunities in [Target Role] and would love to connect with someone who has experience in [their area].\n\nWould you be open to a brief virtual coffee or a quick message exchange?\n\nThanks,\n[Your Name]`,
+              },
+              {
+                title: 'Connection via mutual contact',
+                body: `Hi [Name],\n\n[Mutual Contact] suggested I reach out — they spoke highly of your work at [Company].\n\nI'm actively exploring opportunities in [Target Role] and would value your perspective. Would you be open to a 15-minute conversation?\n\nBest,\n[Your Name]`,
+              },
+              {
+                title: 'Follow-up after connecting',
+                body: `Hi [Name],\n\nThank you for connecting! I really appreciated the chance to [mention what you discussed or why you connected].\n\nAs I mentioned, I'm looking for opportunities in [Target Role]. If you hear of anything or know someone I should speak with, I'd really appreciate an introduction.\n\nThanks again,\n[Your Name]`,
+              },
+              {
+                title: 'Informational interview request',
+                body: `Hi [Name],\n\nI'm currently in job search mode for [Target Role] roles and have been following your work at [Company] with great interest.\n\nWould you be open to a 20-minute virtual coffee? I'd love to hear about your experience and get your advice on breaking into [field/company/industry].\n\nNo obligation at all — I'd just really value your perspective.\n\nThanks,\n[Your Name]`,
+              },
+              {
+                title: 'Thank you after a call',
+                body: `Hi [Name],\n\nThank you so much for taking the time to speak with me today. The conversation was genuinely helpful — especially your thoughts on [specific topic they mentioned].\n\nI'll take your advice about [specific advice] and will be in touch if any opportunities come up that feel like a fit.\n\nReally grateful for your generosity with your time.\n\n[Your Name]`,
+              },
+              {
+                title: 'Checking in (no response)',
+                body: `Hi [Name],\n\nI just wanted to follow up on my message from [timeframe]. I know you're busy, so no pressure at all — I just wanted to make sure it didn't get lost in the shuffle.\n\nWould love to connect if you have a moment.\n\nThanks,\n[Your Name]`,
+              },
+            ].map(({ title, body }) => (
+              <TemplateCard key={title} title={title} body={body} />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

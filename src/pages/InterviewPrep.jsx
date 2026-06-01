@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useData } from '../context/DataContext'
-import { Plus, Trash2, ChevronDown, CheckCircle2, Circle, Star } from 'lucide-react'
+import { Plus, Trash2, ChevronDown, CheckCircle2, Circle, Star, Copy } from 'lucide-react'
 
 const inputCls = "w-full border border-[#D8E4EC] rounded-lg px-3 py-2 text-sm text-[#263746] focus:outline-none focus:ring-2 focus:ring-[#6D99F2]/40 bg-white placeholder:text-[#7A8FA3]"
 const textareaCls = `${inputCls} resize-none`
@@ -55,11 +55,36 @@ const PREP_CHECKS = [
   { key: 'outfit', label: 'Outfit & tech tested' },
 ]
 
+function InterviewTemplateCard({ title, body }) {
+  const [copied, setCopied] = useState(false)
+  function copy() {
+    navigator.clipboard.writeText(body)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+  return (
+    <div className="bg-white border border-[#E4EDF5] rounded-2xl p-5">
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-sm font-bold text-[#263746]">{title}</p>
+        <button
+          onClick={copy}
+          className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg cursor-pointer transition-colors ${copied ? 'bg-emerald-50 text-emerald-600' : 'bg-[#EEF3FA] text-[#6D99F2] hover:bg-[#263746] hover:text-white'}`}
+        >
+          <Copy size={11} />
+          {copied ? 'Copied!' : 'Copy'}
+        </button>
+      </div>
+      <p className="text-xs text-[#7A8FA3] leading-relaxed whitespace-pre-line">{body}</p>
+    </div>
+  )
+}
+
 export default function InterviewPrep() {
   const { data, update } = useData()
   const [expanded, setExpanded] = useState(null)
   const [qExpanded, setQExpanded] = useState(null)
   const [filterCat, setFilterCat] = useState('')
+  const [showEmailTemplates, setShowEmailTemplates] = useState(false)
   const interviews = data.interviewPrep || []
   const questions = data.questionBank || []
 
@@ -111,9 +136,13 @@ export default function InterviewPrep() {
       </div>
 
       {interviews.length === 0 && (
-        <div className="bg-white rounded-xl border border-[#D8E4EC] p-12 text-center">
+        <div className="bg-white rounded-xl border border-[#D8E4EC] p-10 text-center mb-4">
           <div className="text-4xl mb-3">🎯</div>
-          <p className="text-[#7A8FA3] text-sm">No interviews yet. Add one to start your prep.</p>
+          <p className="text-[#263746] font-semibold text-base mb-2">Prep like a pro</p>
+          <p className="text-[#7A8FA3] text-sm max-w-md mx-auto leading-relaxed">Add your upcoming interview and work through your STAR stories, company research, and talking points. Walk in prepared and walk out confident.</p>
+          <button onClick={add} className="mt-5 inline-flex items-center gap-2 bg-[#263746] hover:bg-[#1a2832] text-white text-sm font-medium px-5 py-2.5 rounded-lg cursor-pointer transition-colors">
+            <Plus size={16} /> Add your first interview
+          </button>
         </div>
       )}
 
@@ -271,9 +300,13 @@ export default function InterviewPrep() {
         )}
 
         {questions.length === 0 && (
-          <div className="bg-white rounded-xl border border-[#D8E4EC] p-12 text-center">
+          <div className="bg-white rounded-xl border border-[#D8E4EC] p-10 text-center">
             <div className="text-4xl mb-3">💬</div>
-            <p className="text-[#7A8FA3] text-sm">No questions yet. Add your own or load the starter set.</p>
+            <p className="text-[#263746] font-semibold text-base mb-2">Build your answer library</p>
+            <p className="text-[#7A8FA3] text-sm max-w-md mx-auto leading-relaxed mb-5">Practise makes permanent. Load the starter questions or add your own, write your STAR answers, and rate your confidence until every answer is solid.</p>
+            <button onClick={addStarters} className="inline-flex items-center gap-2 border border-[#D8E4EC] text-[#4A5C6B] hover:bg-[#F5F9FD] text-sm font-medium px-5 py-2.5 rounded-lg cursor-pointer transition-colors">
+              Load starter questions
+            </button>
           </div>
         )}
 
@@ -330,6 +363,41 @@ export default function InterviewPrep() {
             )
           })}
         </div>
+      </div>
+
+      {/* Email Templates */}
+      <div className="mt-10">
+        <button
+          onClick={() => setShowEmailTemplates(t => !t)}
+          className="flex items-center gap-2 text-sm font-semibold text-[#263746] mb-4 cursor-pointer"
+        >
+          <span>✉️ Email Templates</span>
+          <ChevronDown size={15} className={`text-[#7A8FA3] transition-transform ${showEmailTemplates ? 'rotate-180' : ''}`} />
+        </button>
+        {showEmailTemplates && (
+          <div className="grid sm:grid-cols-2 gap-4">
+            {[
+              {
+                title: 'Thank you — after interview',
+                body: `Hi [Name],\n\nThank you so much for taking the time to meet with me today. I really enjoyed learning more about the [Role] position and the work [Company] is doing with [specific thing].\n\nOur conversation reinforced my excitement about this opportunity — particularly around [specific aspect of the role]. I believe my experience in [relevant skill/experience] positions me well to contribute.\n\nI look forward to the next steps and don't hesitate to reach out if you need anything further from me.\n\nWarm regards,\n[Your Name]`,
+              },
+              {
+                title: 'Follow-up — no response after interview',
+                body: `Hi [Name],\n\nI hope you're well. I wanted to follow up on my interview for the [Role] position on [date].\n\nI remain very interested in the opportunity and would love to know if there are any updates on the timeline or next steps.\n\nThank you again for your time.\n\nBest,\n[Your Name]`,
+              },
+              {
+                title: 'Withdrawing from process',
+                body: `Hi [Name],\n\nThank you for the opportunity to interview for the [Role] position. After careful consideration, I have decided to withdraw my application at this stage.\n\nThis was not an easy decision — the role and team were genuinely appealing. However, [brief reason if appropriate, e.g. "I have accepted another opportunity" or "the timing isn't right"].\n\nI hope our paths cross again in the future and I wish you and the team all the best.\n\nKind regards,\n[Your Name]`,
+              },
+              {
+                title: 'Asking for feedback after rejection',
+                body: `Hi [Name],\n\nThank you for letting me know the outcome of the [Role] process. While I'm disappointed, I appreciate you taking the time to inform me.\n\nIf possible, I'd be grateful for any feedback on my application or interviews. Understanding where I could improve would be really valuable as I continue my search.\n\nThank you again for your time and consideration.\n\nBest,\n[Your Name]`,
+              },
+            ].map(({ title, body }) => (
+              <InterviewTemplateCard key={title} title={title} body={body} />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

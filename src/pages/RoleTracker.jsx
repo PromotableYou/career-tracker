@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useData } from '../context/DataContext'
-import { Plus, Trash2, ChevronDown, ExternalLink, Info, LayoutGrid, List } from 'lucide-react'
+import { Plus, Trash2, ChevronDown, ExternalLink, Info, LayoutGrid, List, Columns2 } from 'lucide-react'
 import FileUpload from '../components/FileUpload'
 
 const STATUS_OPTIONS = ['Not Started', 'Researching', 'Applied', 'Awaiting Response', 'Interview Scheduled', 'Offer Received', 'Rejected', 'Withdrawn']
@@ -422,6 +422,7 @@ export default function RoleTracker() {
   const { data, update } = useData()
   const [expanded, setExpanded] = useState(null)
   const [viewMode, setViewMode] = useState('cards')
+  const [dragId, setDragId] = useState(null)
   const apps = data.applications || []
   const resumeVersions = data.resumeVersions || []
   const blueprint = data.blueprint || {}
@@ -495,6 +496,7 @@ export default function RoleTracker() {
         <div className="flex items-center gap-2">
           <button onClick={() => setViewMode('cards')} className={`flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg cursor-pointer transition-colors ${viewMode === 'cards' ? 'bg-[#263746] text-white' : 'bg-white border border-[#D8E4EC] text-[#4A5C6B] hover:bg-[#F5F9FD]'}`} title="Card view"><LayoutGrid size={15} /></button>
           <button onClick={() => setViewMode('table')} className={`flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg cursor-pointer transition-colors ${viewMode === 'table' ? 'bg-[#263746] text-white' : 'bg-white border border-[#D8E4EC] text-[#4A5C6B] hover:bg-[#F5F9FD]'}`} title="Table view"><List size={15} /></button>
+          <button onClick={() => setViewMode('kanban')} className={`flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg cursor-pointer transition-colors ${viewMode === 'kanban' ? 'bg-[#263746] text-white' : 'bg-white border border-[#D8E4EC] text-[#4A5C6B] hover:bg-[#F5F9FD]'}`} title="Board view"><Columns2 size={15} /></button>
           <button onClick={addApp} className="flex items-center gap-2 bg-[#263746] hover:bg-[#1a2832] text-white text-sm font-medium px-4 py-2 rounded-lg cursor-pointer transition-colors">
             <Plus size={16} /> Log application
           </button>
@@ -519,11 +521,124 @@ export default function RoleTracker() {
       )}
 
       {apps.length === 0 && (
-        <div className="bg-white rounded-xl border border-[#D8E4EC] p-12 text-center">
+        <div className="bg-white rounded-xl border border-[#D8E4EC] p-10 text-center">
           <div className="text-4xl mb-3">📋</div>
-          <p className="text-[#7A8FA3] text-sm">No applications yet. Hit "Log application" to get started.</p>
+          <p className="text-[#263746] font-semibold text-base mb-2">Start tracking your applications</p>
+          <p className="text-[#7A8FA3] text-sm max-w-md mx-auto leading-relaxed mb-5">Add every role you're considering — even ones you're still researching. Logging early keeps you organised and helps you rate each role against your Career Blueprint so you apply to the right ones.</p>
+          <button onClick={addApp} className="inline-flex items-center gap-2 bg-[#263746] hover:bg-[#1a2832] text-white text-sm font-medium px-5 py-2.5 rounded-lg cursor-pointer transition-colors">
+            <Plus size={16} /> Log your first application
+          </button>
         </div>
       )}
+
+      {/* Kanban board view */}
+      {viewMode === 'kanban' && (() => {
+        const KANBAN_COLS = ['Researching', 'Applied', 'Awaiting Response', 'Interview Scheduled', 'Offer Received']
+        const closedApps = apps.filter(a => a.status === 'Rejected' || a.status === 'Withdrawn')
+        return (
+          <div>
+            <div className="flex gap-4 overflow-x-auto pb-4">
+              {KANBAN_COLS.map(colStatus => {
+                const colApps = apps.filter(a => a.status === colStatus)
+                const isDragOver = dragId !== null
+                const colColor = STATUS_COLORS[colStatus] || 'bg-[#F5F9FD] text-[#7A8FA3]'
+                return (
+                  <div
+                    key={colStatus}
+                    className="min-w-[220px] w-[220px] flex-shrink-0 flex flex-col"
+                    onDragOver={e => e.preventDefault()}
+                    onDrop={e => { e.preventDefault(); if (dragId) { updateApp(dragId, 'status', colStatus); setDragId(null) } }}
+                  >
+                    {/* Column header */}
+                    <div className="flex items-center justify-between mb-2 px-1">
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${colColor}`}>{colStatus}</span>
+                      <span className="text-xs font-bold text-[#7A8FA3] bg-[#EEF3FA] rounded-full px-2 py-0.5">{colApps.length}</span>
+                    </div>
+                    {/* Column body */}
+                    <div
+                      className={`min-h-[300px] flex-1 rounded-xl p-2 flex flex-col gap-2 transition-colors ${isDragOver ? 'border-2 border-[#6D99F2]/40 bg-[#F8FBFD]' : 'bg-[#F8FBFD] border-2 border-transparent'}`}
+                    >
+                      {colApps.map(app => (
+                        <div
+                          key={app.id}
+                          draggable
+                          onDragStart={() => setDragId(app.id)}
+                          onDragEnd={() => setDragId(null)}
+                          className="bg-white rounded-lg border border-[#D8E4EC] px-3 py-2.5 cursor-grab active:cursor-grabbing hover:shadow-sm transition-shadow group"
+                        >
+                          <div
+                            className="cursor-pointer"
+                            onClick={() => { setViewMode('cards'); setExpanded(app.id) }}
+                          >
+                            <p className="text-xs font-bold text-[#263746] truncate">{app.company || 'Untitled company'}</p>
+                            <p className="text-[10px] text-[#7A8FA3] truncate mt-0.5">{app.jobRole || 'No role'}</p>
+                            <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                              {app.workType && (
+                                <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${WORK_TYPE_COLORS[app.workType] || ''}`}>{app.workType}</span>
+                              )}
+                              <AlignmentPill ratings={app.blueprintRatings} />
+                            </div>
+                          </div>
+                          <div className="flex justify-end mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              onClick={e => { e.stopPropagation(); removeApp(app.id) }}
+                              className="text-[#FF5E5B] hover:text-red-700 cursor-pointer"
+                            >
+                              <Trash2 size={11} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            {/* Closed section */}
+            {closedApps.length > 0 && (
+              <div className="mt-6">
+                <p className="text-xs font-semibold text-[#7A8FA3] uppercase tracking-wide mb-3">Closed ({closedApps.length})</p>
+                <div className="flex gap-3 flex-wrap">
+                  {closedApps.map(app => (
+                    <div
+                      key={app.id}
+                      draggable
+                      onDragStart={() => setDragId(app.id)}
+                      onDragEnd={() => setDragId(null)}
+                      className="bg-white rounded-lg border border-[#D8E4EC] px-3 py-2.5 w-[220px] cursor-grab active:cursor-grabbing hover:shadow-sm transition-shadow group"
+                    >
+                      <div
+                        className="cursor-pointer"
+                        onClick={() => { setViewMode('cards'); setExpanded(app.id) }}
+                      >
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${STATUS_COLORS[app.status] || 'bg-[#F5F9FD] text-[#7A8FA3]'}`}>{app.status}</span>
+                        </div>
+                        <p className="text-xs font-bold text-[#263746] truncate">{app.company || 'Untitled company'}</p>
+                        <p className="text-[10px] text-[#7A8FA3] truncate mt-0.5">{app.jobRole || 'No role'}</p>
+                        <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                          {app.workType && (
+                            <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${WORK_TYPE_COLORS[app.workType] || ''}`}>{app.workType}</span>
+                          )}
+                          <AlignmentPill ratings={app.blueprintRatings} />
+                        </div>
+                      </div>
+                      <div className="flex justify-end mt-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={e => { e.stopPropagation(); removeApp(app.id) }}
+                          className="text-[#FF5E5B] hover:text-red-700 cursor-pointer"
+                        >
+                          <Trash2 size={11} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )
+      })()}
 
       {/* Card view */}
       {viewMode === 'cards' && (
