@@ -1,16 +1,10 @@
 import React from 'react'
 import { useData } from '../context/DataContext'
 import {
-  PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
-  LineChart, Line, XAxis, YAxis, CartesianGrid, BarChart, Bar
-} from 'recharts'
-import {
   Briefcase, Users, TrendingUp, AlertCircle,
   CheckCircle, Clock, Target, Plus, Trophy, ClipboardList,
-  Lightbulb, CalendarCheck, ArrowRight
+  CalendarCheck, ArrowRight, Sparkles
 } from 'lucide-react'
-
-const COLORS = ['#263746', '#6D99F2', '#9999FF', '#D4AF37', '#FF5E5B', '#FBD872', '#344f66']
 
 const QUOTES = [
   "You don't have to be ready. You have to be willing.",
@@ -66,24 +60,6 @@ function weeksActive(startDate) {
 function appsThisWeek(applications) {
   const weekAgo = Date.now() - 7 * 86400000
   return applications.filter(a => a.submittedDate && new Date(a.submittedDate) >= weekAgo).length
-}
-
-function getApplicationsOverTime(applications) {
-  if (!applications.length) return []
-  const byWeek = {}
-  applications.forEach(a => {
-    if (!a.submittedDate) return
-    const d = new Date(a.submittedDate)
-    const weekStart = new Date(d)
-    weekStart.setDate(d.getDate() - d.getDay())
-    const key = weekStart.toISOString().slice(0, 10)
-    byWeek[key] = (byWeek[key] || 0) + 1
-  })
-  return Object.entries(byWeek).sort(([a], [b]) => a.localeCompare(b))
-    .map(([date, count]) => ({
-      week: new Date(date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' }),
-      apps: count,
-    }))
 }
 
 function getRoleFitScore(applications) {
@@ -142,10 +118,10 @@ function getModulePrompts(applications, weeks) {
   const totalApps = applications.length
   const hasInterview = applications.some(a => a.interviewDate)
   const hasOffer = applications.some(a => a.status === 'Offer Received')
-  if (totalApps >= 5 && !hasInterview) prompts.push({ icon: '🎤', module: 'Mastering Interviews', message: `${totalApps} applications in — are you interview-ready?`, urgency: 'amber' })
-  if (hasInterview && !hasOffer) prompts.push({ icon: '🏆', module: 'Influential Interviews', message: 'Interview coming up — brush up on behavioural questions and your career overview.', urgency: 'blue' })
-  if (totalApps >= 10) prompts.push({ icon: '🧭', module: 'Career Blueprint Builder', message: `${totalApps} applications in — are you still targeting the right roles?`, urgency: 'navy' })
-  if (weeks >= 3 && totalApps < 3) prompts.push({ icon: '🚀', module: 'Winning Applicants Formula', message: 'A few weeks in but applications are low — revisit your momentum strategy.', urgency: 'amber' })
+  if (totalApps >= 5 && !hasInterview) prompts.push({ icon: '🎤', module: 'Mastering Interviews', message: `${totalApps} applications in — are you interview-ready?` })
+  if (hasInterview && !hasOffer) prompts.push({ icon: '🏆', module: 'Influential Interviews', message: 'Interview coming up — brush up on behavioural questions and your career overview.' })
+  if (totalApps >= 10) prompts.push({ icon: '🧭', module: 'Career Blueprint Builder', message: `${totalApps} applications in — are you still targeting the right roles?` })
+  if (weeks >= 3 && totalApps < 3) prompts.push({ icon: '🚀', module: 'Winning Applicants Formula', message: 'A few weeks in but applications are low — revisit your momentum strategy.' })
   return prompts
 }
 
@@ -176,16 +152,14 @@ export default function Dashboard({ navigate }) {
   const overdueFollowUps = getOverdueFollowUps(applications)
   const modulePrompts = getModulePrompts(applications, weeks)
   const wins = data.wins || []
-  const appOverTime = getApplicationsOverTime(applications)
   const roleFit = getRoleFitScore(applications)
-
-  const roleMap = {}
-  applications.forEach(a => { if (a.jobRole) roleMap[a.jobRole] = (roleMap[a.jobRole] || 0) + 1 })
-  const pieData = Object.entries(roleMap).map(([name, value]) => ({ name, value }))
 
   const fitColor = roleFit?.color === 'emerald' ? '#10b981' : roleFit?.color === 'amber' ? '#f59e0b' : '#FF5E5B'
   const fitBg = roleFit?.color === 'emerald' ? 'bg-emerald-50' : roleFit?.color === 'amber' ? 'bg-amber-50' : 'bg-red-50'
   const fitText = roleFit?.color === 'emerald' ? 'text-emerald-600' : roleFit?.color === 'amber' ? 'text-amber-600' : 'text-red-500'
+
+  const hasFirstCheckin = (weeklyCheckins || []).some(c => c.submitted)
+  const hasOffer = applications.some(a => a.status === 'Offer Received')
 
   function addWin(e) {
     e.preventDefault()
@@ -204,7 +178,7 @@ export default function Dashboard({ navigate }) {
     <div className="max-w-5xl">
 
       {/* ── GREETING ─────────────────────────────────────────── */}
-      <div className="mb-8">
+      <div className="mb-7">
         <div className="flex flex-wrap items-center gap-2 mb-4">
           {weeks > 0 && (
             <span className="inline-flex items-center gap-1.5 bg-[#263746] text-white text-xs font-semibold px-3 py-1.5 rounded-full">
@@ -217,11 +191,63 @@ export default function Dashboard({ navigate }) {
             {days !== null && <span className="opacity-60">· {days === 0 ? 'active today' : `${days}d ago`}</span>}
           </span>
         </div>
-
         <h1 className="text-5xl font-black text-[#1a2b38] font-['Inter'] leading-[1.1] mb-3 tracking-tight">
           {profile.name ? `Hey ${profile.name.split(' ')[0]} 👋` : 'Welcome back 👋'}
         </h1>
         <p className="text-lg text-[#8FA3B3] italic font-['Playfair_Display']">"{getQuote()}"</p>
+      </div>
+
+      {/* ── MILESTONES ────────────────────────────────────────── */}
+      <div className="mb-6">
+        <p className="text-xs font-bold text-[#A8BCC8] uppercase tracking-widest mb-3">Your milestones</p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {[
+            {
+              emoji: '📝',
+              label: 'First application',
+              done: totalApps > 0,
+              detail: totalApps > 0 ? `${totalApps} logged so far` : 'Not yet',
+              celebrate: 'You started. That took courage.',
+            },
+            {
+              emoji: '📞',
+              label: 'First interview',
+              done: interviews > 0,
+              detail: interviews > 0 ? `${interviews} scheduled` : 'Not yet',
+              celebrate: 'They want to meet you.',
+            },
+            {
+              emoji: '✅',
+              label: 'First check-in',
+              done: hasFirstCheckin,
+              detail: hasFirstCheckin ? 'Habit started' : 'Not yet',
+              celebrate: 'Reflection is how you improve.',
+            },
+            {
+              emoji: '🎉',
+              label: 'First offer',
+              done: hasOffer,
+              detail: hasOffer ? 'Offer received!' : 'Not yet',
+              celebrate: "All that work paid off.",
+            },
+          ].map(({ emoji, label, done, detail, celebrate }) => (
+            <div
+              key={label}
+              className={`rounded-2xl p-5 flex flex-col items-center text-center transition-all ${
+                done
+                  ? 'bg-white border border-[#E4EDF5] shadow-sm'
+                  : 'bg-[#F8FBFD] border border-dashed border-[#E4EDF5]'
+              }`}
+            >
+              <div className={`text-3xl mb-3 ${done ? '' : 'grayscale opacity-25'}`}>{emoji}</div>
+              <p className={`text-xs font-bold leading-snug mb-1.5 ${done ? 'text-[#263746]' : 'text-[#C8D8E4]'}`}>{label}</p>
+              {done
+                ? <p className="text-[10px] text-[#6D99F2] font-medium italic font-['Playfair_Display'] leading-snug">{celebrate}</p>
+                : <p className="text-[10px] text-[#D8E4EC]">{detail}</p>
+              }
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* ── YOUR WEEK ─────────────────────────────────────────── */}
@@ -345,140 +371,106 @@ export default function Dashboard({ navigate }) {
         </div>
       </div>
 
-      {/* ── ALERTS ─────────────────────────────────────────────── */}
-      {checkinOverdue && (
-        <div className="flex items-center gap-4 bg-amber-50 border border-amber-100 rounded-2xl px-6 py-4 mb-4">
-          <ClipboardList size={20} className="text-amber-500 flex-shrink-0" />
-          <div className="flex-1">
-            <p className="text-sm font-bold text-amber-800">Weekly check-in due</p>
-            <p className="text-xs text-amber-600 mt-0.5">Keep the habit going — fill in this week's reflection.</p>
+      {/* ── NUDGES (check-in + follow-ups + module prompts) ───── */}
+      {(checkinOverdue || overdueFollowUps.length > 0 || modulePrompts.length > 0) && (
+        <div className="bg-white rounded-3xl border border-[#E4EDF5] p-6 mb-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Sparkles size={15} className="text-[#D4AF37]" />
+            <p className="text-xs font-bold text-[#263746] uppercase tracking-widest">On your radar</p>
           </div>
-          <button onClick={() => navigate('checkin')} className="text-xs font-bold text-amber-800 bg-white border border-amber-200 px-4 py-2 rounded-xl hover:bg-amber-100 cursor-pointer transition-colors flex-shrink-0">
-            Go to check-in
-          </button>
-        </div>
-      )}
+          <div className="space-y-3">
 
-      {overdueFollowUps.length > 0 && (
-        <div className="bg-red-50 border border-red-100 rounded-2xl p-5 mb-4">
-          <div className="flex items-center gap-2 mb-3">
-            <AlertCircle size={16} className="text-red-400" />
-            <span className="text-sm font-bold text-red-700">{overdueFollowUps.length} follow-up{overdueFollowUps.length !== 1 ? 's' : ''} overdue</span>
-          </div>
-          <div className="space-y-2">
-            {overdueFollowUps.map(a => (
-              <div key={a.id} className="flex items-center justify-between gap-3 bg-white rounded-xl px-4 py-2.5 border border-red-100">
-                <div>
-                  <span className="text-sm font-semibold text-[#263746]">{a.company || 'Untitled'}</span>
-                  {a.jobRole && <span className="text-xs text-[#A8BCC8] ml-2">{a.jobRole}</span>}
-                  <span className="text-xs text-red-400 ml-2">due {a.followUpDate}</span>
+            {/* Check-in overdue */}
+            {checkinOverdue && (
+              <div className="flex items-center gap-4 bg-[#FEFAF2] border border-[#F5E9C4] rounded-2xl px-5 py-4">
+                <div className="w-9 h-9 rounded-xl bg-[#FEF3CD] flex items-center justify-center flex-shrink-0">
+                  <ClipboardList size={16} className="text-[#D4AF37]" />
                 </div>
-                <button onClick={() => markFollowUpDone(a.id)} className="text-xs text-emerald-600 font-bold hover:underline cursor-pointer flex-shrink-0">Mark done</button>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-[#7A5C10]">Weekly check-in due</p>
+                  <p className="text-xs text-[#A87E30] mt-0.5">Keep the habit going — fill in this week's reflection.</p>
+                </div>
+                <button
+                  onClick={() => navigate('checkin')}
+                  className="text-xs font-semibold text-[#7A5C10] bg-white border border-[#F0D98A] px-4 py-2 rounded-xl hover:bg-[#FEF3CD] cursor-pointer transition-colors flex-shrink-0"
+                >
+                  Go to check-in →
+                </button>
+              </div>
+            )}
+
+            {/* Overdue follow-ups */}
+            {overdueFollowUps.length > 0 && (
+              <div className="bg-red-50 border border-red-100 rounded-2xl p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <AlertCircle size={14} className="text-red-400" />
+                  <span className="text-xs font-bold text-red-700">{overdueFollowUps.length} follow-up{overdueFollowUps.length !== 1 ? 's' : ''} overdue</span>
+                </div>
+                <div className="space-y-2">
+                  {overdueFollowUps.map(a => (
+                    <div key={a.id} className="flex items-center justify-between gap-3 bg-white rounded-xl px-4 py-2.5 border border-red-100">
+                      <div>
+                        <span className="text-sm font-semibold text-[#263746]">{a.company || 'Untitled'}</span>
+                        {a.jobRole && <span className="text-xs text-[#A8BCC8] ml-2">{a.jobRole}</span>}
+                        <span className="text-xs text-red-400 ml-2">due {a.followUpDate}</span>
+                      </div>
+                      <button onClick={() => markFollowUpDone(a.id)} className="text-xs text-emerald-600 font-bold hover:underline cursor-pointer flex-shrink-0">Mark done</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Module prompts */}
+            {modulePrompts.map((p, i) => (
+              <div key={i} className="flex items-start gap-4 px-5 py-4 bg-[#F8FBFD] border border-[#EEF3FA] rounded-2xl">
+                <span className="text-xl flex-shrink-0 mt-0.5">{p.icon}</span>
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-[#263746] mb-0.5">{p.module}</p>
+                  <p className="text-xs text-[#7A8FA3] leading-relaxed">{p.message}</p>
+                </div>
               </div>
             ))}
-          </div>
-        </div>
-      )}
 
-      {modulePrompts.length > 0 && (
-        <div className="mb-6 space-y-2">
-          {modulePrompts.map((p, i) => (
-            <div key={i} className={`flex items-center gap-4 p-4 rounded-2xl border ${p.urgency === 'amber' ? 'bg-amber-50 border-amber-100' : p.urgency === 'blue' ? 'bg-[#EEF3FA] border-[#D0E4F8]' : 'bg-[#F5F9FD] border-[#E4EDF5]'}`}>
-              <span className="text-2xl flex-shrink-0">{p.icon}</span>
-              <div className="flex-1">
-                <p className="text-xs font-bold text-[#263746] mb-0.5">{p.module}</p>
-                <p className="text-xs text-[#5A7080]">{p.message}</p>
-              </div>
-              <Lightbulb size={14} className="text-[#D4AF37] flex-shrink-0" />
-            </div>
-          ))}
+          </div>
         </div>
       )}
 
       {/* ── WIN LOG ────────────────────────────────────────────── */}
       <div className="bg-white rounded-3xl border border-[#E4EDF5] p-7 mb-6">
         <div className="flex items-center gap-2.5 mb-5">
-          <Trophy size={20} className="text-[#D4AF37]" />
-          <h3 className="text-lg font-black text-[#1a2b38] font-['Inter']">Win Log</h3>
-          <span className="text-sm text-[#A8BCC8]">— celebrate the small stuff</span>
+          <Trophy size={18} className="text-[#D4AF37]" />
+          <h3 className="text-base font-black text-[#1a2b38] font-['Inter']">Win Log</h3>
+          <span className="text-sm text-[#C8D8E4]">— every win counts</span>
         </div>
-        <form onSubmit={addWin} className="flex gap-2 mb-4">
+        <form onSubmit={addWin} className="flex gap-2 mb-5">
           <input
             className="flex-1 border border-[#E4EDF5] rounded-xl px-4 py-3 text-sm text-[#263746] placeholder:text-[#C8D8E4] focus:outline-none focus:ring-2 focus:ring-[#6D99F2]/25 bg-[#F8FBFD]"
-            placeholder="e.g. Got a callback from Google!"
+            placeholder="What went well? e.g. Got a callback from Google!"
             value={newWin}
             onChange={e => setNewWin(e.target.value)}
           />
-          <button type="submit" className="bg-[#263746] hover:bg-[#1a2832] text-white px-5 py-3 rounded-xl text-sm font-bold cursor-pointer transition-colors flex items-center gap-2">
+          <button type="submit" className="bg-[#263746] hover:bg-[#1a2832] text-white px-5 py-3 rounded-xl text-sm font-bold cursor-pointer transition-colors flex items-center gap-2 flex-shrink-0">
             <Plus size={15} /> Add
           </button>
         </form>
         {wins.length === 0 ? (
-          <p className="text-sm text-[#C8D8E4] italic text-center py-6">No wins logged yet — they don't have to be big!</p>
+          <p className="text-sm text-[#D8E4EC] text-center py-5 italic">Nothing logged yet — your wins don't have to be big!</p>
         ) : (
-          <div className="space-y-2 max-h-52 overflow-y-auto">
+          <div className="flex flex-wrap gap-2">
             {wins.map(w => (
-              <div key={w.id} className="flex items-center justify-between gap-3 bg-[#F8FBFD] rounded-xl px-4 py-3 border border-[#EEF3FA]">
-                <div className="flex items-center gap-3">
-                  <span>🏆</span>
-                  <span className="text-sm text-[#263746] font-medium">{w.text}</span>
-                </div>
-                <div className="flex items-center gap-3 flex-shrink-0">
-                  <span className="text-xs text-[#C8D8E4]">{w.date}</span>
-                  <button onClick={() => removeWin(w.id)} className="text-[#D8E4EC] hover:text-[#FF5E5B] transition-colors cursor-pointer text-xs">✕</button>
-                </div>
+              <div key={w.id} className="group flex items-center gap-2.5 bg-[#FFFBEF] border border-[#F5E9C4] rounded-full pl-3.5 pr-2.5 py-2">
+                <span className="text-sm">🌟</span>
+                <span className="text-sm text-[#7A5C10] font-medium">{w.text}</span>
+                <span className="text-[10px] text-[#D4AF37] opacity-70">{w.date}</span>
+                <button
+                  onClick={() => removeWin(w.id)}
+                  className="text-[#D4AF37] hover:text-[#FF5E5B] transition-colors cursor-pointer opacity-0 group-hover:opacity-100 ml-0.5"
+                >✕</button>
               </div>
             ))}
           </div>
         )}
-      </div>
-
-      {/* ── CHARTS ─────────────────────────────────────────────── */}
-      <div className="grid lg:grid-cols-2 gap-5 mb-6">
-        <div className="bg-white rounded-3xl p-7 border border-[#E4EDF5]">
-          <h3 className="text-base font-black text-[#1a2b38] font-['Inter'] mb-5">Applications Over Time</h3>
-          {appOverTime.length > 1 ? (
-            <ResponsiveContainer width="100%" height={180}>
-              <LineChart data={appOverTime}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#F0F5FA" />
-                <XAxis dataKey="week" tick={{ fontSize: 10, fill: '#A8BCC8' }} />
-                <YAxis tick={{ fontSize: 10, fill: '#A8BCC8' }} allowDecimals={false} />
-                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 12, border: '1px solid #E4EDF5', boxShadow: '0 4px 12px rgba(0,0,0,0.06)' }} />
-                <Line type="monotone" dataKey="apps" stroke="#6D99F2" strokeWidth={2.5} dot={{ fill: '#6D99F2', r: 4, strokeWidth: 0 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="h-[180px] flex flex-col items-center justify-center text-[#C8D8E4] text-sm gap-2">
-              <TrendingUp size={28} className="opacity-40" />
-              Log applications with dates to see progress
-            </div>
-          )}
-        </div>
-
-        <div className="bg-white rounded-3xl p-7 border border-[#E4EDF5]">
-          <h3 className="text-base font-black text-[#1a2b38] font-['Inter'] mb-5">Application Pipeline</h3>
-          {totalApps > 0 ? (
-            <ResponsiveContainer width="100%" height={180}>
-              <BarChart data={[
-                { stage: 'Researching', count: applications.filter(a => a.status === 'Researching').length },
-                { stage: 'Applied', count: applications.filter(a => a.status === 'Applied').length },
-                { stage: 'Interview', count: applications.filter(a => a.status === 'Interview Scheduled').length },
-                { stage: 'Offer', count: applications.filter(a => a.status === 'Offer Received').length },
-              ]} barSize={32}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#F0F5FA" />
-                <XAxis dataKey="stage" tick={{ fontSize: 10, fill: '#A8BCC8' }} />
-                <YAxis tick={{ fontSize: 10, fill: '#A8BCC8' }} allowDecimals={false} />
-                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 12, border: '1px solid #E4EDF5', boxShadow: '0 4px 12px rgba(0,0,0,0.06)' }} />
-                <Bar dataKey="count" fill="#263746" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="h-[180px] flex flex-col items-center justify-center text-[#C8D8E4] text-sm gap-2">
-              <Briefcase size={28} className="opacity-40" />
-              Add applications to see your pipeline
-            </div>
-          )}
-        </div>
       </div>
 
       {/* ── ROLE FIT ───────────────────────────────────────────── */}
@@ -528,24 +520,6 @@ export default function Dashboard({ navigate }) {
           </div>
         </div>
       )}
-
-      {/* ── MILESTONES ─────────────────────────────────────────── */}
-      <div className="bg-white rounded-3xl p-7 border border-[#E4EDF5] mb-6">
-        <h3 className="text-base font-black text-[#1a2b38] font-['Inter'] mb-5">Milestones</h3>
-        <div className="grid grid-cols-3 gap-4">
-          {[
-            { label: 'First application', done: applications.length > 0, msg: 'First application in. This is how it starts.' },
-            { label: 'First interview', done: applications.some(a => a.interviewDate), msg: 'First interview booked. You made the leap.' },
-            { label: 'First offer', done: (data.offers?.length > 0), msg: "First offer on the table. Let's choose wisely." },
-          ].map(({ label, done, msg }) => (
-            <div key={label} className={`p-5 rounded-2xl text-center transition-all ${done ? 'bg-[#F0F6FF] border-2 border-[#D0E4F8]' : 'bg-[#F8FBFD] border border-[#EEF3FA]'}`}>
-              <div className={`text-2xl mb-2 ${done ? '' : 'grayscale opacity-25'}`}>{done ? '✅' : '⭕'}</div>
-              <div className={`text-xs font-bold mb-1.5 ${done ? 'text-[#263746]' : 'text-[#C8D8E4]'}`}>{label}</div>
-              {done && <div className="text-xs text-[#6D99F2] italic font-['Playfair_Display'] leading-snug">{msg}</div>}
-            </div>
-          ))}
-        </div>
-      </div>
 
     </div>
   )
