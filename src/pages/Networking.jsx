@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useData } from '../context/DataContext'
-import { Plus, Trash2, ChevronDown, ChevronUp, MapPin, Copy, Search } from 'lucide-react'
+import { Plus, Trash2, ChevronDown, ChevronUp, MapPin, Copy, Search, Check } from 'lucide-react'
 
 const TYPE_OPTIONS = ['','Peer','Mentor','Recruiter','Hiring Manager','Alumni','Former colleague','Industry contact','LinkedIn connection','Other']
 const DEPTH_OPTIONS = ['','Weak tie','Acquaintance','Established','Strong']
@@ -51,6 +51,168 @@ function TemplateCard({ title, body }) {
   )
 }
 
+function ContactCard({ contact, isExpanded, onToggle, onSave, onRemove }) {
+  const [draft, setDraft] = useState(contact)
+  const [saved, setSaved] = useState(false)
+
+  // Sync draft when contact prop changes from outside (e.g. new contact added)
+  useEffect(() => { setDraft(contact) }, [contact.id])
+
+  const isDirty = JSON.stringify(draft) !== JSON.stringify(contact)
+
+  function field(key, value) { setDraft(prev => ({ ...prev, [key]: value })) }
+
+  function addTouchpoint() {
+    const today = new Date().toISOString().slice(0, 10)
+    const tp = { id: Date.now(), date: today, note: '' }
+    setDraft(prev => {
+      const touchpoints = [...(prev.touchpoints || []), tp]
+      const lastContact = prev.lastContact && prev.lastContact >= today ? prev.lastContact : today
+      return { ...prev, touchpoints, lastContact }
+    })
+  }
+  function updTouchpoint(tpId, key, value) {
+    setDraft(prev => ({ ...prev, touchpoints: (prev.touchpoints || []).map(tp => tp.id === tpId ? { ...tp, [key]: value } : tp) }))
+  }
+  function removeTouchpoint(tpId) {
+    setDraft(prev => ({ ...prev, touchpoints: (prev.touchpoints || []).filter(tp => tp.id !== tpId) }))
+  }
+
+  function handleSave() {
+    onSave(draft)
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2000)
+  }
+  function handleCancel() { setDraft(contact) }
+
+  const c = draft
+  return (
+    <div className="bg-white rounded-xl border border-[#D8E4EC] overflow-hidden">
+      <div className="flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-[#F5F9FD] transition-colors" onClick={onToggle}>
+        <div className="flex items-center gap-4 min-w-0">
+          <div className="w-9 h-9 rounded-full bg-[#EEF3FA] flex items-center justify-center text-sm font-bold text-[#6D99F2] flex-shrink-0">
+            {contact.person ? contact.person.charAt(0).toUpperCase() : '?'}
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-semibold text-[#263746] truncate">{contact.person || 'New contact'}</p>
+              {(contact.status || 'Active') === 'Inactive' && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 font-medium flex-shrink-0">Inactive</span>
+              )}
+            </div>
+            <p className="text-xs text-[#7A8FA3] truncate flex items-center gap-1">
+              {[contact.role, contact.company, contact.area].filter(Boolean).join(' · ') || 'No details yet'}
+              {contact.location && <span className="flex items-center gap-0.5 ml-1"><MapPin size={9} />{contact.location}</span>}
+            </p>
+          </div>
+          {contact.depth && (
+            <span className={`hidden sm:inline text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${DEPTH_COLORS[contact.depth] || 'bg-gray-100 text-gray-600'}`}>{contact.depth}</span>
+          )}
+        </div>
+        <div className="flex items-center gap-3 flex-shrink-0 ml-3">
+          {contact.lastContact && (
+            <span className="hidden md:block text-xs text-[#7A8FA3]">Last: {new Date(contact.lastContact).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}</span>
+          )}
+          <button onClick={e => { e.stopPropagation(); onRemove() }} className="text-[#D8E4EC] hover:text-[#FF5E5B] transition-colors cursor-pointer"><Trash2 size={15} /></button>
+          {isExpanded ? <ChevronUp size={16} className="text-[#7A8FA3]" /> : <ChevronDown size={16} className="text-[#7A8FA3]" />}
+        </div>
+      </div>
+
+      {isExpanded && (
+        <div className="px-5 pb-5 border-t border-[#EEF3FA]">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+            <div><label className={labelCls}>Name</label><input className={inputCls} value={c.person} onChange={e => field('person', e.target.value)} placeholder="Full name" /></div>
+            <div><label className={labelCls}>Their Role</label><input className={inputCls} value={c.role} onChange={e => field('role', e.target.value)} placeholder="Job title" /></div>
+            <div><label className={labelCls}>Company</label><input className={inputCls} value={c.company || ''} onChange={e => field('company', e.target.value)} placeholder="Where they work" /></div>
+            <div><label className={labelCls}>Contact Details</label><input className={inputCls} value={c.contact} onChange={e => field('contact', e.target.value)} placeholder="LinkedIn / email" /></div>
+            <div>
+              <label className={labelCls}>Status</label>
+              <select className={inputCls} value={c.status || 'Active'} onChange={e => field('status', e.target.value)}>
+                {STATUS_OPTIONS.map(o => <option key={o}>{o}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={labelCls}>Where We Met</label>
+              <select className={inputCls} value={c.whereMet || ''} onChange={e => field('whereMet', e.target.value)}>
+                {WHERE_MET_OPTIONS.map(o => <option key={o}>{o}</option>)}
+              </select>
+            </div>
+            <div><label className={labelCls}>Introduced By</label><input className={inputCls} value={c.introducedBy || ''} onChange={e => field('introducedBy', e.target.value)} placeholder="Who made the introduction?" /></div>
+            <div><label className={labelCls}>Location</label><input className={inputCls} value={c.location || ''} onChange={e => field('location', e.target.value)} placeholder="e.g. Sydney, Remote, Melbourne" /></div>
+            <div>
+              <label className={labelCls}>Network Area</label>
+              <select className={inputCls} value={c.area} onChange={e => field('area', e.target.value)}>
+                {NETWORK_AREAS.map(o => <option key={o}>{o}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={labelCls}>Contact Type</label>
+              <select className={inputCls} value={c.type} onChange={e => field('type', e.target.value)}>
+                {TYPE_OPTIONS.map(o => <option key={o}>{o}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className={labelCls}>Relationship Depth</label>
+              <select className={inputCls} value={c.depth} onChange={e => field('depth', e.target.value)}>
+                {DEPTH_OPTIONS.map(o => <option key={o}>{o}</option>)}
+              </select>
+            </div>
+            <div><label className={labelCls}>Last Contact</label><input className={inputCls} type="date" value={c.lastContact} onChange={e => field('lastContact', e.target.value)} /></div>
+            <div><label className={labelCls}>Leverage Area</label><input className={inputCls} value={c.leverage} onChange={e => field('leverage', e.target.value)} placeholder="How they can help" /></div>
+            <div className="sm:col-span-2 lg:col-span-3"><label className={labelCls}>Strategy / Next Step</label><input className={inputCls} value={c.strategy} onChange={e => field('strategy', e.target.value)} placeholder="What's your next move with this person?" /></div>
+          </div>
+
+          {/* Touchpoints */}
+          <div className="mt-4 pt-4 border-t border-[#EEF3FA]">
+            <div className="flex items-center justify-between mb-3">
+              <label className={labelCls}>Contact History</label>
+              <button onClick={addTouchpoint} className="flex items-center gap-1 text-xs text-[#6D99F2] hover:text-[#263746] cursor-pointer font-medium transition-colors"><Plus size={12} /> Log touchpoint</button>
+            </div>
+            {(c.touchpoints || []).length === 0 ? (
+              <p className="text-xs text-[#7A8FA3] italic">No touchpoints logged yet.</p>
+            ) : (
+              <div className="space-y-2">
+                {[...(c.touchpoints || [])].sort((a, b) => b.date.localeCompare(a.date)).map(tp => (
+                  <div key={tp.id} className="flex gap-3 items-center bg-[#F8F5F2] rounded-lg px-3 py-2">
+                    <input className="border border-[#D8E4EC] rounded px-2 py-1 text-xs bg-white focus:outline-none flex-shrink-0" type="date" value={tp.date} onChange={e => updTouchpoint(tp.id, 'date', e.target.value)} />
+                    <input className="flex-1 bg-transparent text-xs text-[#263746] focus:outline-none border-b border-dashed border-[#D8E4EC] focus:border-[#6D99F2] placeholder:text-[#7A8FA3]" value={tp.note} onChange={e => updTouchpoint(tp.id, 'note', e.target.value)} placeholder="What happened? Next steps?" />
+                    <button onClick={() => removeTouchpoint(tp.id)} className="text-[#D8E4EC] hover:text-[#FF5E5B] transition-colors cursor-pointer flex-shrink-0"><Trash2 size={13} /></button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Save / Cancel */}
+          <div className="mt-5 pt-4 border-t border-[#EEF3FA] flex items-center justify-end gap-3">
+            {isDirty && (
+              <button
+                onClick={handleCancel}
+                className="text-sm text-[#7A8FA3] hover:text-[#263746] transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+            )}
+            <button
+              onClick={handleSave}
+              disabled={!isDirty && !saved}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all cursor-pointer ${
+                saved
+                  ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
+                  : isDirty
+                  ? 'bg-[#263746] hover:bg-[#1a2832] text-white'
+                  : 'bg-[#F5F9FD] text-[#7A8FA3] border border-[#D8E4EC] cursor-not-allowed'
+              }`}
+            >
+              {saved ? <><Check size={14} /> Saved</> : 'Save changes'}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function Networking() {
   const { data, update } = useData()
   const contacts = data.networking || []
@@ -67,127 +229,19 @@ export default function Networking() {
     setExpanded(c.id)
   }
   function remove(id) { set(contacts.filter(c => c.id !== id)) }
-  function upd(id, field, value) { set(contacts.map(c => c.id === id ? { ...c, [field]: value } : c)) }
+  function save(id, updated) { set(contacts.map(c => c.id === id ? updated : c)) }
   function toggle(id) { setExpanded(expanded === id ? null : id) }
-  function addTouchpoint(contactId) {
-    const today = new Date().toISOString().slice(0, 10)
-    const tp = { id: Date.now(), date: today, note: '' }
-    set(contacts.map(c => {
-      if (c.id !== contactId) return c
-      const touchpoints = [...(c.touchpoints || []), tp]
-      const lastContact = c.lastContact && c.lastContact >= today ? c.lastContact : today
-      return { ...c, touchpoints, lastContact }
-    }))
-  }
-  function updateTouchpoint(contactId, tpId, field, value) {
-    set(contacts.map(c => c.id !== contactId ? c : {
-      ...c, touchpoints: (c.touchpoints || []).map(tp => tp.id === tpId ? { ...tp, [field]: value } : tp)
-    }))
-  }
-  function removeTouchpoint(contactId, tpId) {
-    set(contacts.map(c => c.id !== contactId ? c : {
-      ...c, touchpoints: (c.touchpoints || []).filter(tp => tp.id !== tpId)
-    }))
-  }
 
   function renderContact(c) {
     return (
-      <div key={c.id} className="bg-white rounded-xl border border-[#D8E4EC] overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-4 cursor-pointer hover:bg-[#F5F9FD] transition-colors" onClick={() => toggle(c.id)}>
-          <div className="flex items-center gap-4 min-w-0">
-            <div className="w-9 h-9 rounded-full bg-[#EEF3FA] flex items-center justify-center text-sm font-bold text-[#6D99F2] flex-shrink-0">
-              {c.person ? c.person.charAt(0).toUpperCase() : '?'}
-            </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <p className="text-sm font-semibold text-[#263746] truncate">{c.person || 'New contact'}</p>
-                {(c.status || 'Active') === 'Inactive' && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500 font-medium flex-shrink-0">Inactive</span>
-                )}
-              </div>
-              <p className="text-xs text-[#7A8FA3] truncate flex items-center gap-1">
-                {[c.role, c.company, c.area].filter(Boolean).join(' · ') || 'No details yet'}
-                {c.location && <span className="flex items-center gap-0.5 ml-1"><MapPin size={9} />{c.location}</span>}
-              </p>
-            </div>
-            {c.depth && (
-              <span className={`hidden sm:inline text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${DEPTH_COLORS[c.depth] || 'bg-gray-100 text-gray-600'}`}>{c.depth}</span>
-            )}
-          </div>
-          <div className="flex items-center gap-3 flex-shrink-0 ml-3">
-            {c.lastContact && (
-              <span className="hidden md:block text-xs text-[#7A8FA3]">Last: {new Date(c.lastContact).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}</span>
-            )}
-            <button onClick={e => { e.stopPropagation(); remove(c.id) }} className="text-[#D8E4EC] hover:text-[#FF5E5B] transition-colors cursor-pointer"><Trash2 size={15} /></button>
-            {expanded === c.id ? <ChevronUp size={16} className="text-[#7A8FA3]" /> : <ChevronDown size={16} className="text-[#7A8FA3]" />}
-          </div>
-        </div>
-
-        {expanded === c.id && (
-          <div className="px-5 pb-5 border-t border-[#EEF3FA]">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-              <div><label className={labelCls}>Name</label><input className={inputCls} value={c.person} onChange={e => upd(c.id,'person',e.target.value)} placeholder="Full name" /></div>
-              <div><label className={labelCls}>Their Role</label><input className={inputCls} value={c.role} onChange={e => upd(c.id,'role',e.target.value)} placeholder="Job title" /></div>
-              <div><label className={labelCls}>Company</label><input className={inputCls} value={c.company || ''} onChange={e => upd(c.id,'company',e.target.value)} placeholder="Where they work" /></div>
-              <div><label className={labelCls}>Contact Details</label><input className={inputCls} value={c.contact} onChange={e => upd(c.id,'contact',e.target.value)} placeholder="LinkedIn / email" /></div>
-              <div>
-                <label className={labelCls}>Status</label>
-                <select className={inputCls} value={c.status || 'Active'} onChange={e => upd(c.id,'status',e.target.value)}>
-                  {STATUS_OPTIONS.map(o => <option key={o}>{o}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className={labelCls}>Where We Met</label>
-                <select className={inputCls} value={c.whereMet || ''} onChange={e => upd(c.id,'whereMet',e.target.value)}>
-                  {WHERE_MET_OPTIONS.map(o => <option key={o}>{o}</option>)}
-                </select>
-              </div>
-              <div><label className={labelCls}>Introduced By</label><input className={inputCls} value={c.introducedBy || ''} onChange={e => upd(c.id,'introducedBy',e.target.value)} placeholder="Who made the introduction?" /></div>
-              <div><label className={labelCls}>Location</label><input className={inputCls} value={c.location || ''} onChange={e => upd(c.id,'location',e.target.value)} placeholder="e.g. Sydney, Remote, Melbourne" /></div>
-              <div>
-                <label className={labelCls}>Network Area</label>
-                <select className={inputCls} value={c.area} onChange={e => upd(c.id,'area',e.target.value)}>
-                  {NETWORK_AREAS.map(o => <option key={o}>{o}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className={labelCls}>Contact Type</label>
-                <select className={inputCls} value={c.type} onChange={e => upd(c.id,'type',e.target.value)}>
-                  {TYPE_OPTIONS.map(o => <option key={o}>{o}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className={labelCls}>Relationship Depth</label>
-                <select className={inputCls} value={c.depth} onChange={e => upd(c.id,'depth',e.target.value)}>
-                  {DEPTH_OPTIONS.map(o => <option key={o}>{o}</option>)}
-                </select>
-              </div>
-              <div><label className={labelCls}>Last Contact</label><input className={inputCls} type="date" value={c.lastContact} onChange={e => upd(c.id,'lastContact',e.target.value)} /></div>
-              <div><label className={labelCls}>Leverage Area</label><input className={inputCls} value={c.leverage} onChange={e => upd(c.id,'leverage',e.target.value)} placeholder="How they can help" /></div>
-              <div className="sm:col-span-2 lg:col-span-3"><label className={labelCls}>Strategy / Next Step</label><input className={inputCls} value={c.strategy} onChange={e => upd(c.id,'strategy',e.target.value)} placeholder="What's your next move with this person?" /></div>
-            </div>
-            <div className="mt-4 pt-4 border-t border-[#EEF3FA]">
-              <div className="flex items-center justify-between mb-3">
-                <label className={labelCls}>Contact History</label>
-                <button onClick={() => addTouchpoint(c.id)} className="flex items-center gap-1 text-xs text-[#6D99F2] hover:text-[#263746] cursor-pointer font-medium transition-colors"><Plus size={12} /> Log touchpoint</button>
-              </div>
-              {(c.touchpoints || []).length === 0 ? (
-                <p className="text-xs text-[#7A8FA3] italic">No touchpoints logged yet.</p>
-              ) : (
-                <div className="space-y-2">
-                  {[...(c.touchpoints || [])].sort((a, b) => b.date.localeCompare(a.date)).map(tp => (
-                    <div key={tp.id} className="flex gap-3 items-center bg-[#F8F5F2] rounded-lg px-3 py-2">
-                      <input className="border border-[#D8E4EC] rounded px-2 py-1 text-xs bg-white focus:outline-none flex-shrink-0" type="date" value={tp.date} onChange={e => updateTouchpoint(c.id, tp.id, 'date', e.target.value)} />
-                      <input className="flex-1 bg-transparent text-xs text-[#263746] focus:outline-none border-b border-dashed border-[#D8E4EC] focus:border-[#6D99F2] placeholder:text-[#7A8FA3]" value={tp.note} onChange={e => updateTouchpoint(c.id, tp.id, 'note', e.target.value)} placeholder="What happened? Next steps?" />
-                      <button onClick={() => removeTouchpoint(c.id, tp.id)} className="text-[#D8E4EC] hover:text-[#FF5E5B] transition-colors cursor-pointer flex-shrink-0"><Trash2 size={13} /></button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
+      <ContactCard
+        key={c.id}
+        contact={c}
+        isExpanded={expanded === c.id}
+        onToggle={() => toggle(c.id)}
+        onSave={updated => save(c.id, updated)}
+        onRemove={() => remove(c.id)}
+      />
     )
   }
 
