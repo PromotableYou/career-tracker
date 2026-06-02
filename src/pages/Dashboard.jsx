@@ -110,7 +110,7 @@ function getOverdueFollowUps(applications) {
   const today = new Date().toISOString().slice(0, 10)
   return applications.filter(a =>
     a.followUpDate && a.followUpDate <= today && !a.followUpDone &&
-    !['Offer Received', 'Rejected', 'Withdrawn'].includes(a.status)
+    !['Offer Received', 'Rejected'].includes(a.status)
   )
 }
 

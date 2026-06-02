@@ -3,8 +3,8 @@ import { useData } from '../context/DataContext'
 import { Plus, Trash2, ChevronDown, ExternalLink, Info, LayoutGrid, List, Columns2, Search, Copy, Download, Clock } from 'lucide-react'
 import FileUpload from '../components/FileUpload'
 
-const STATUS_OPTIONS = ['Not Started', 'Researching', 'Applied', 'Awaiting Response', 'Interview Scheduled', 'Offer Received', 'Rejected', 'Withdrawn']
-const OUTCOME_OPTIONS = ['', 'Progressing', 'Rejected', 'Offer', 'Withdrawn', 'Awaiting']
+const STATUS_OPTIONS = ['Not Started', 'Researching', 'Applied', 'Interview Scheduled', 'Offer Received', 'Rejected']
+const OUTCOME_OPTIONS = ['', 'Progressing', 'Rejected', 'Offer']
 const OUTREACH_TYPES = ['Call', 'Email', 'LinkedIn message', 'Received response']
 const WORK_TYPES = ['', 'Remote', 'Hybrid', 'On-site']
 const SOURCE_OPTIONS = ['', 'LinkedIn', 'Seek', 'Indeed', 'Company website', 'Referral', 'Recruiter', 'Other']
@@ -17,11 +17,9 @@ const STATUS_COLORS = {
   'Not Started': 'bg-[#F5F9FD] text-[#7A8FA3]',
   'Researching': 'bg-[#EEF3FA] text-[#6D99F2]',
   'Applied': 'bg-[#263746]/10 text-[#263746]',
-  'Awaiting Response': 'bg-amber-50 text-amber-700',
   'Interview Scheduled': 'bg-[#FBD872]/20 text-amber-800',
   'Offer Received': 'bg-emerald-50 text-emerald-700',
   'Rejected': 'bg-red-50 text-[#FF5E5B]',
-  'Withdrawn': 'bg-[#F5F9FD] text-[#7A8FA3]',
 }
 const BP_CATEGORIES = [
   { key: 'company', label: 'The Company' },
@@ -34,7 +32,7 @@ const BP_CATEGORIES = [
   { key: 'salary', label: 'Salary / Benefits' },
 ]
 const inputCls = "w-full border border-[#D8E4EC] rounded-lg px-2 py-1.5 text-xs text-[#263746] focus:outline-none focus:ring-2 focus:ring-[#6D99F2]/40 bg-white placeholder:text-[#7A8FA3]"
-const ACTIVE_STATUSES = ['Not Started', 'Researching', 'Applied', 'Awaiting Response', 'Interview Scheduled', 'Offer Received']
+const ACTIVE_STATUSES = ['Not Started', 'Researching', 'Applied', 'Interview Scheduled', 'Offer Received']
 
 function getAlignmentMeta(ratings) {
   const total = BP_CATEGORIES.reduce((sum, c) => sum + (parseInt(ratings?.[c.key]) || 0), 0)
@@ -791,8 +789,8 @@ export default function RoleTracker() {
 
       {/* Kanban board view */}
       {viewMode === 'kanban' && (() => {
-        const KANBAN_COLS = ['Researching', 'Applied', 'Awaiting Response', 'Interview Scheduled', 'Offer Received']
-        const closedApps = apps.filter(a => a.status === 'Rejected' || a.status === 'Withdrawn')
+        const KANBAN_COLS = ['Researching', 'Applied', 'Interview Scheduled', 'Offer Received']
+        const closedApps = apps.filter(a => a.status === 'Rejected')
         return (
           <div>
             <div className="flex gap-4 overflow-x-auto pb-4">
