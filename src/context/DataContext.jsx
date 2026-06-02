@@ -26,6 +26,9 @@ export const DEFAULTS = {
   },
   linkedinOutreach: [],
   interviewPrep: [],
+  interviewFoundation: {
+    starStories: {}, generalTalkingPoints: '', icebreakers: '', nervesStrategies: {}, nervesNotes: '',
+  },
   questionBank: [],
   wins: [],
   salary: [],
