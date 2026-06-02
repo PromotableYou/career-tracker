@@ -283,7 +283,7 @@ export default function Dashboard({ navigate }) {
             className="flex items-center gap-2 text-xs font-semibold text-[#7A8FA3] hover:text-[#263746] bg-white border border-[#E4EDF5] px-4 py-2 rounded-xl cursor-pointer transition-colors hover:shadow-sm"
           >
             <FileDown size={13} />
-            Coach summary PDF
+            Download weekly summary
           </button>
         </div>
       </div>
