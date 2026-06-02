@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useData } from '../context/DataContext'
-import { CheckCircle2, Circle, Zap, TableProperties, Layers, Plus, Trash2, ChevronDown } from 'lucide-react'
+import { CheckCircle2, Circle, Zap, TableProperties, Layers, Plus, Trash2, ChevronDown, Eraser } from 'lucide-react'
 
 const inputCls = "w-full border border-[#D8E4EC] rounded-lg px-2 py-1.5 text-xs text-[#263746] focus:outline-none focus:ring-2 focus:ring-[#6D99F2]/40 bg-white placeholder:text-[#7A8FA3]"
 
@@ -89,6 +89,8 @@ export default function WeeklyCheckin() {
   const [showSummary, setShowSummary] = useState(false)
   const [expanded, setExpanded] = useState(null)
 
+  const [confirmClear, setConfirmClear] = useState(false)
+
   function set(next) { update('weeklyCheckins', next) }
   function add() {
     const c = newCheckin()
@@ -99,6 +101,7 @@ export default function WeeklyCheckin() {
   function upd(id, field, value) { set(checkins.map(c => c.id === id ? { ...c, [field]: value } : c)) }
   function toggle(id) { setExpanded(expanded === id ? null : id) }
   function autoFillApps(id, weekOf) { upd(id, 'appsSubmitted', countAppsForWeek(applications, weekOf)) }
+  function clearAll() { set([]); setConfirmClear(false); setExpanded(null) }
 
   // Sort oldest first for display (Week 1 at top), oldest first for week numbering
   const sorted = [...checkins].sort((a, b) => {
@@ -129,6 +132,21 @@ export default function WeeklyCheckin() {
             >
               {showSummary ? <><Layers size={13} /> Cards</> : <><TableProperties size={13} /> Summary</>}
             </button>
+          )}
+          {total > 0 && !confirmClear && (
+            <button
+              onClick={() => setConfirmClear(true)}
+              className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg cursor-pointer transition-colors border bg-white text-[#FF5E5B] border-[#FF5E5B]/30 hover:bg-red-50"
+            >
+              <Eraser size={13} /> Clear all
+            </button>
+          )}
+          {confirmClear && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-[#7A8FA3]">Remove all {total} check-in{total !== 1 ? 's' : ''}?</span>
+              <button onClick={clearAll} className="text-xs font-semibold px-3 py-2 rounded-lg bg-[#FF5E5B] text-white cursor-pointer hover:bg-red-600 transition-colors">Yes, clear</button>
+              <button onClick={() => setConfirmClear(false)} className="text-xs font-semibold px-3 py-2 rounded-lg border border-[#D8E4EC] text-[#4A5C6B] bg-white cursor-pointer hover:bg-[#EEF3FA] transition-colors">Cancel</button>
+            </div>
           )}
           <button onClick={add} className="flex items-center gap-2 bg-[#263746] hover:bg-[#1a2832] text-white text-sm font-medium px-4 py-2 rounded-lg cursor-pointer transition-colors">
             <Plus size={15} /> New check-in
