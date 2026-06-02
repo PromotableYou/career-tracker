@@ -32,6 +32,7 @@ export const DEFAULTS = {
   offers: [],
   coaching: [],
   weeklyCheckins: [],
+  weeklyLog: [],
 }
 
 function getEmailParam() {

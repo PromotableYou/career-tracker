@@ -9,8 +9,7 @@ import RoleTracker from './pages/RoleTracker'
 import Networking from './pages/Networking'
 import LinkedIn from './pages/LinkedIn'
 import InterviewPrep from './pages/InterviewPrep'
-import Coaching from './pages/Coaching'
-import WeeklyCheckin from './pages/WeeklyCheckin'
+import WeeklyLog from './pages/WeeklyLog'
 import Events from './pages/Events'
 import {
   LayoutDashboard, User, Briefcase, Network,
@@ -26,15 +25,14 @@ const NAV = [
   { id: 'networking', label: 'Networking', icon: Network },
   { id: 'linkedin', label: 'LinkedIn', icon: Link2 },
   { id: 'interviews', label: 'Interview Prep', icon: MessageSquare },
-  { id: 'coaching', label: 'Coaching Sessions', icon: CalendarCheck },
-  { id: 'checkin', label: 'Weekly Check-In', icon: ClipboardList },
+  { id: 'weeklylog', label: 'Weekly Log', icon: ClipboardList },
   { id: 'events', label: 'Professional Dev', icon: GraduationCap },
 ]
 
 const PAGES = {
   dashboard: Dashboard, myprofile: MyProfile, roles: RoleTracker,
   networking: Networking, linkedin: LinkedIn,
-  interviews: InterviewPrep, coaching: Coaching, checkin: WeeklyCheckin, events: Events,
+  interviews: InterviewPrep, weeklylog: WeeklyLog, events: Events,
 }
 
 function EmbedLayout({ page, navigate, Page }) {

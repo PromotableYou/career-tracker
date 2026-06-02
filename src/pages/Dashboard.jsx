@@ -33,13 +33,13 @@ const BP_CATEGORIES = [
 
 function getQuote() { return QUOTES[new Date().getDay() % QUOTES.length] }
 
-function daysSinceLastActivity(applications, networking, weeklyCheckins, coaching) {
+function daysSinceLastActivity(applications, networking, weeklyLog, coaching) {
   const dates = [
     ...applications.map(a => a.submittedDate),
     ...applications.map(a => a.interviewDate),
     ...(networking || []).map(n => n.lastContact),
     ...(networking || []).flatMap(n => (n.touchpoints || []).map(tp => tp.date)),
-    ...(weeklyCheckins || []).filter(c => c.submitted && c.weekOf).map(c => c.weekOf),
+    ...(weeklyLog || []).filter(c => c.submitted && c.weekOf).map(c => c.weekOf),
     ...(coaching || []).map(c => c.date),
   ].filter(Boolean).map(d => new Date(d))
   if (!dates.length) return null
@@ -101,9 +101,9 @@ function getStreak(applications, networking) {
   return streak
 }
 
-function getCheckinOverdue(weeklyCheckins) {
+function getCheckinOverdue(weeklyLog) {
   const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10)
-  return !(weeklyCheckins || []).some(c => c.submitted && c.weekOf && c.weekOf >= sevenDaysAgo)
+  return !(weeklyLog || []).some(c => c.submitted && c.weekOf && c.weekOf >= sevenDaysAgo)
 }
 
 function getOverdueFollowUps(applications) {
@@ -134,7 +134,7 @@ const STATUS_STYLES = {
 
 export default function Dashboard({ navigate }) {
   const { data, update, updateNested } = useData()
-  const { profile, applications, networking, weeklyCheckins } = data
+  const { profile, applications, networking, weeklyLog } = data
   const [editingTarget, setEditingTarget] = React.useState(null)
   const [targetDraft, setTargetDraft] = React.useState('')
   const [newWin, setNewWin] = React.useState('')
@@ -143,11 +143,11 @@ export default function Dashboard({ navigate }) {
   const interviews = applications.filter(a => a.interviewDate).length
   const convRate = totalApps ? ((interviews / totalApps) * 100).toFixed(1) : '0.0'
   const weeks = weeksActive(profile.startDate)
-  const days = daysSinceLastActivity(applications, networking, weeklyCheckins, data.coaching)
+  const days = daysSinceLastActivity(applications, networking, weeklyLog, data.coaching)
   const appsWeek = appsThisWeek(applications)
   const networkingWeek = networking.filter(n => n.lastContact && new Date(n.lastContact) >= Date.now() - 7 * 86400000).length
   const status = getStatus(days, appsWeek, profile.weeklyAppTarget || 5)
-  const checkinOverdue = getCheckinOverdue(weeklyCheckins)
+  const checkinOverdue = getCheckinOverdue(weeklyLog)
   const streak = getStreak(applications, networking)
   const overdueFollowUps = getOverdueFollowUps(applications)
   const modulePrompts = getModulePrompts(applications, weeks)
@@ -170,7 +170,7 @@ export default function Dashboard({ navigate }) {
   const fitBg = roleFit?.color === 'emerald' ? 'bg-emerald-50' : roleFit?.color === 'amber' ? 'bg-amber-50' : 'bg-red-50'
   const fitText = roleFit?.color === 'emerald' ? 'text-emerald-600' : roleFit?.color === 'amber' ? 'text-amber-600' : 'text-red-500'
 
-  const hasFirstCheckin = (weeklyCheckins || []).some(c => c.submitted)
+  const hasFirstCheckin = (weeklyLog || []).some(c => c.submitted)
   const hasOffer = applications.some(a => a.status === 'Offer Received')
 
   function addWin(e) {
@@ -230,7 +230,7 @@ export default function Dashboard({ navigate }) {
     row('Day streak', streak)
     y += 4
 
-    const thisWeekCheckin = (weeklyCheckins || []).find(c => c.submitted && c.weekOf && c.weekOf >= weekStart.toISOString().slice(0, 10))
+    const thisWeekCheckin = (weeklyLog || []).find(c => c.submitted && c.weekOf && c.weekOf >= weekStart.toISOString().slice(0, 10))
     section('Weekly Check-In')
     row('Submitted', thisWeekCheckin ? 'Yes' : 'Not yet')
     if (thisWeekCheckin?.wentWell) { row('What went well', ''); doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(74, 92, 107); const lines = doc.splitTextToSize(thisWeekCheckin.wentWell, 160); doc.text(lines, 22, y); y += lines.length * 5 + 2 }
@@ -299,7 +299,7 @@ export default function Dashboard({ navigate }) {
             </div>
           </div>
           <button
-            onClick={() => navigate('checkin')}
+            onClick={() => navigate('weeklylog')}
             className="flex-shrink-0 bg-white text-[#263746] text-xs font-bold px-4 py-2.5 rounded-xl hover:bg-[#EEF3FA] cursor-pointer transition-colors"
           >
             Do it now →
@@ -463,8 +463,7 @@ export default function Dashboard({ navigate }) {
           {[
             { label: 'Log application', page: 'roles', icon: Briefcase, accent: '#6D99F2', accentBg: '#EEF3FA' },
             { label: 'Add networking', page: 'networking', icon: Users, accent: '#10b981', accentBg: '#ecfdf5' },
-            { label: 'Friday check-in', page: 'checkin', icon: ClipboardList, accent: '#D4AF37', accentBg: '#fefce8' },
-            { label: 'Log coaching', page: 'coaching', icon: CalendarCheck, accent: '#a78bfa', accentBg: '#f5f3ff' },
+            { label: 'Weekly log', page: 'weeklylog', icon: ClipboardList, accent: '#D4AF37', accentBg: '#fefce8' },
           ].map(({ label, page, icon: Icon, accent, accentBg }) => (
             <button
               key={label}
@@ -524,7 +523,7 @@ export default function Dashboard({ navigate }) {
                   <p className="text-xs text-[#A87E30] mt-0.5">Keep the habit going — fill in this week's reflection.</p>
                 </div>
                 <button
-                  onClick={() => navigate('checkin')}
+                  onClick={() => navigate('weeklylog')}
                   className="text-xs font-semibold text-[#7A5C10] bg-white border border-[#F0D98A] px-4 py-2 rounded-xl hover:bg-[#FEF3CD] cursor-pointer transition-colors flex-shrink-0"
                 >
                   Go to check-in →
