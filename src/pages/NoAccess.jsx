@@ -15,8 +15,7 @@ export default function NoAccess() {
       const res = await fetch(`/api/lookup?email=${encodeURIComponent(email.trim().toLowerCase())}`)
       if (res.ok) {
         const { token } = await res.json()
-        localStorage.setItem('py-tracker-uid', token)
-        window.location.href = '/'
+        window.location.href = `/?uid=${token}`
       } else if (res.status === 404) {
         setError("We couldn't find your email. Check the spelling, or contact your coach to get access.")
       } else {
