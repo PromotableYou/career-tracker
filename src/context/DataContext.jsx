@@ -94,12 +94,18 @@ export function DataProvider({ children }) {
         .then(json => {
           if (!json) return
           setData(mergeWithDefaults(json.data || {}))
+          // Cache against this specific uid so fallback never serves another user's data
+          localStorage.setItem('career-tracker-data', JSON.stringify({ uid, data: json.data || {} }))
           setLoading(false)
         })
         .catch(() => {
           try {
             const raw = localStorage.getItem('career-tracker-data')
-            if (raw) setData(mergeWithDefaults(JSON.parse(raw)))
+            if (raw) {
+              const parsed = JSON.parse(raw)
+              // Only use cache if it belongs to this uid
+              if (parsed?.uid === uid) setData(mergeWithDefaults(parsed.data || {}))
+            }
           } catch {}
           setLoading(false)
         })
