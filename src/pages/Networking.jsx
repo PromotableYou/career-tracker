@@ -64,12 +64,18 @@ function TemplateCard({ title, body }) {
   )
 }
 
-function ContactCard({ contact, isExpanded, onToggle, onSave, onRemove }) {
+function ContactCard({ contact, isExpanded, onToggle, onSave, onRemove, onToggleStatus }) {
   const [draft, setDraft] = useState(contact)
   const [saved, setSaved] = useState(false)
 
   // Sync draft when contact prop changes from outside (e.g. new contact added)
   useEffect(() => { setDraft(contact) }, [contact.id])
+
+  // Derive lastContact from the most recent touchpoint date
+  function deriveLastContact(touchpoints) {
+    const dates = (touchpoints || []).map(tp => tp.date).filter(Boolean)
+    return dates.length ? dates.sort().at(-1) : ''
+  }
 
   const isDirty = JSON.stringify(draft) !== JSON.stringify(contact)
 
@@ -80,15 +86,20 @@ function ContactCard({ contact, isExpanded, onToggle, onSave, onRemove }) {
     const tp = { id: Date.now(), date: today, note: '' }
     setDraft(prev => {
       const touchpoints = [...(prev.touchpoints || []), tp]
-      const lastContact = prev.lastContact && prev.lastContact >= today ? prev.lastContact : today
-      return { ...prev, touchpoints, lastContact }
+      return { ...prev, touchpoints, lastContact: deriveLastContact(touchpoints) }
     })
   }
   function updTouchpoint(tpId, key, value) {
-    setDraft(prev => ({ ...prev, touchpoints: (prev.touchpoints || []).map(tp => tp.id === tpId ? { ...tp, [key]: value } : tp) }))
+    setDraft(prev => {
+      const touchpoints = (prev.touchpoints || []).map(tp => tp.id === tpId ? { ...tp, [key]: value } : tp)
+      return { ...prev, touchpoints, lastContact: deriveLastContact(touchpoints) }
+    })
   }
   function removeTouchpoint(tpId) {
-    setDraft(prev => ({ ...prev, touchpoints: (prev.touchpoints || []).filter(tp => tp.id !== tpId) }))
+    setDraft(prev => {
+      const touchpoints = (prev.touchpoints || []).filter(tp => tp.id !== tpId)
+      return { ...prev, touchpoints, lastContact: deriveLastContact(touchpoints) }
+    })
   }
 
   function handleSave() {
@@ -122,10 +133,17 @@ function ContactCard({ contact, isExpanded, onToggle, onSave, onRemove }) {
             <span className={`hidden sm:inline text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${DEPTH_COLORS[contact.depth] || 'bg-gray-100 text-gray-600'}`}>{contact.depth}</span>
           )}
         </div>
-        <div className="flex items-center gap-3 flex-shrink-0 ml-3">
+        <div className="flex items-center gap-2 flex-shrink-0 ml-3">
           {contact.lastContact && (
             <span className="hidden md:block text-xs text-[#7A8FA3]">Last: {new Date(contact.lastContact).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}</span>
           )}
+          <button
+            onClick={e => { e.stopPropagation(); onToggleStatus() }}
+            title={`Mark as ${(contact.status || 'Active') === 'Active' ? 'Inactive' : 'Active'}`}
+            className={`w-7 h-4 rounded-full transition-colors cursor-pointer flex-shrink-0 relative ${(contact.status || 'Active') === 'Active' ? 'bg-emerald-400' : 'bg-[#D8E4EC]'}`}
+          >
+            <span className={`absolute top-0.5 w-3 h-3 rounded-full bg-white shadow-sm transition-all ${(contact.status || 'Active') === 'Active' ? 'left-3.5' : 'left-0.5'}`} />
+          </button>
           <button onClick={e => { e.stopPropagation(); onRemove() }} className="text-[#D8E4EC] hover:text-[#FF5E5B] transition-colors cursor-pointer"><Trash2 size={15} /></button>
           {isExpanded ? <ChevronUp size={16} className="text-[#7A8FA3]" /> : <ChevronDown size={16} className="text-[#7A8FA3]" />}
         </div>
@@ -138,12 +156,6 @@ function ContactCard({ contact, isExpanded, onToggle, onSave, onRemove }) {
             <div><label className={labelCls}>Their Role</label><input className={inputCls} value={c.role} onChange={e => field('role', e.target.value)} placeholder="Job title" /></div>
             <div><label className={labelCls}>Company</label><input className={inputCls} value={c.company || ''} onChange={e => field('company', e.target.value)} placeholder="Where they work" /></div>
             <div><label className={labelCls}>Contact Details</label><input className={inputCls} value={c.contact} onChange={e => field('contact', e.target.value)} placeholder="LinkedIn / email" /></div>
-            <div>
-              <label className={labelCls}>Status</label>
-              <select className={inputCls} value={c.status || 'Active'} onChange={e => field('status', e.target.value)}>
-                {STATUS_OPTIONS.map(o => <option key={o}>{o}</option>)}
-              </select>
-            </div>
             <div>
               <label className={labelCls}>Where We Met</label>
               <select className={inputCls} value={c.whereMet || ''} onChange={e => field('whereMet', e.target.value)}>
@@ -170,9 +182,7 @@ function ContactCard({ contact, isExpanded, onToggle, onSave, onRemove }) {
                 {DEPTH_OPTIONS.map(o => <option key={o}>{o}</option>)}
               </select>
             </div>
-            <div><label className={labelCls}>Last Contact</label><input className={inputCls} type="date" value={c.lastContact} onChange={e => field('lastContact', e.target.value)} /></div>
             <div><label className={labelCls}>Leverage Area</label><input className={inputCls} value={c.leverage} onChange={e => field('leverage', e.target.value)} placeholder="How they can help" /></div>
-            <div className="sm:col-span-2 lg:col-span-3"><label className={labelCls}>Strategy / Next Step</label><input className={inputCls} value={c.strategy} onChange={e => field('strategy', e.target.value)} placeholder="What's your next move with this person?" /></div>
           </div>
 
           {/* Touchpoints */}
@@ -248,7 +258,18 @@ export default function Networking() {
   }
   function remove(id) { set(contacts.filter(c => c.id !== id)) }
   function save(id, updated) { set(contacts.map(c => c.id === id ? updated : c)) }
+  function toggleStatus(id) {
+    set(contacts.map(c => c.id === id ? { ...c, status: (c.status || 'Active') === 'Active' ? 'Inactive' : 'Active' } : c))
+  }
   function toggle(id) { setExpanded(expanded === id ? null : id) }
+
+  // Active contacts always appear before inactive
+  const sortedContacts = [...contacts].sort((a, b) => {
+    const aActive = (a.status || 'Active') === 'Active'
+    const bActive = (b.status || 'Active') === 'Active'
+    if (aActive === bActive) return 0
+    return aActive ? -1 : 1
+  })
 
   function renderContact(c) {
     return (
@@ -259,6 +280,7 @@ export default function Networking() {
         onToggle={() => toggle(c.id)}
         onSave={updated => save(c.id, updated)}
         onRemove={() => remove(c.id)}
+        onToggleStatus={() => toggleStatus(c.id)}
       />
     )
   }
@@ -344,7 +366,7 @@ export default function Networking() {
       )}
 
       {(() => {
-        const filtered = contacts.filter(c => {
+        const filtered = sortedContacts.filter(c => {
           const matchStatus = statusFilter === 'All' || (c.status || 'Active') === statusFilter
           if (!matchStatus) return false
           if (!search.trim()) return true
