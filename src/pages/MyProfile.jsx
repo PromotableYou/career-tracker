@@ -414,6 +414,20 @@ export default function MyProfile() {
       {/* ── CAREER BLUEPRINT ── */}
       {tab === 'blueprint' && (
         <div className="space-y-6">
+
+          {/* Upload existing blueprint */}
+          <div className="bg-white rounded-xl border border-[#D8E4EC] p-6">
+            <h3 className="font-semibold text-[#263746] mb-1 font-['Inter']">Upload Your Blueprint</h3>
+            <p className="text-sm text-[#7A8FA3] mb-4">Already completed your Career Blueprint? Upload it here so everything's in one place.</p>
+            <FileUpload
+              value={blueprint.file || null}
+              onChange={f => setBlueprint('file', f)}
+            />
+            {blueprint.file && (
+              <p className="text-xs text-emerald-600 mt-2 font-medium">✓ Blueprint uploaded</p>
+            )}
+          </div>
+
           <div className="bg-white rounded-xl border border-[#D8E4EC] p-6">
             <div className="flex items-start justify-between mb-6">
               <div>
