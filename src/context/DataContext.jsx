@@ -8,7 +8,7 @@ export const DEFAULTS = {
     linkedinUrl: '', resumeLink: '',
     weeklyAppTarget: 5, weeklyNetworkTarget: 3,
     jobTitles: [],
-    onboardingComplete: false, watchedWelcome: false, ninetyDayGoal: '',
+    onboardingComplete: false, watchedWelcome: false, thirtyDayGoal: '', ninetyDayGoal: '',
   },
   blueprint: {
     company: '', culture: '', team: '', manager: '',

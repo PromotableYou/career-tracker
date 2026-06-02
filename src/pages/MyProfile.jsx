@@ -195,7 +195,7 @@ export default function MyProfile() {
 
       {/* Completeness meter */}
       {(() => {
-        const profileFields = ['name', 'email', 'coach', 'startDate', 'targetRole', 'linkedinUrl']
+        const profileFields = ['name', 'email', 'coach', 'startDate', 'targetRole']
         const bpFields = ['company', 'culture', 'team', 'manager', 'tasks', 'values', 'environment', 'salary']
         const filled = profileFields.filter(f => profile[f]).length + bpFields.filter(k => blueprint[k]).length
         const total = profileFields.length + bpFields.length
@@ -271,8 +271,8 @@ export default function MyProfile() {
                 <input className={inputCls} value={profile.targetRole} onChange={e => setProfile('targetRole', e.target.value)} placeholder="e.g. Senior Product Manager" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#263746] mb-1">LinkedIn URL</label>
-                <input className={inputCls} type="url" value={profile.linkedinUrl} onChange={e => setProfile('linkedinUrl', e.target.value)} placeholder="https://linkedin.com/in/you" />
+                <label className="block text-sm font-medium text-[#263746] mb-1">30-Day Goal</label>
+                <textarea className={inputCls} rows={2} value={profile.thirtyDayGoal || ''} onChange={e => setProfile('thirtyDayGoal', e.target.value)} placeholder="What's your focus for the next 30 days? e.g. Apply to 20 roles and land 3 interviews." />
               </div>
               <div>
                 <label className="block text-sm font-medium text-[#263746] mb-1">90-Day Goal</label>
@@ -281,20 +281,51 @@ export default function MyProfile() {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl border border-[#D8E4EC] p-6">
-            <h3 className="font-semibold text-[#263746] mb-1 font-['Inter']">Weekly Targets</h3>
-            <p className="text-sm text-[#7A8FA3] mb-4">These drive your progress bars on the dashboard.</p>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-[#263746] mb-1">Weekly Application Target</label>
-                <input className={inputCls} type="number" min="1" value={profile.weeklyAppTarget} onChange={e => setProfile('weeklyAppTarget', +e.target.value)} />
+          {(() => {
+            // Calculate this week's progress
+            const today = new Date()
+            const dayOfWeek = today.getDay() // 0=Sun
+            const weekStart = new Date(today)
+            weekStart.setDate(today.getDate() - ((dayOfWeek + 6) % 7)) // Mon
+            weekStart.setHours(0, 0, 0, 0)
+            const weekStartStr = weekStart.toISOString().slice(0, 10)
+
+            const appsThisWeek = (data.applications || []).filter(a => a.submittedDate >= weekStartStr).length
+            const networkThisWeek = (data.networking || []).filter(n => n.lastContact >= weekStartStr).length
+
+            const appTarget = profile.weeklyAppTarget || 5
+            const netTarget = profile.weeklyNetworkTarget || 3
+            const appPct = Math.min(100, Math.round((appsThisWeek / appTarget) * 100))
+            const netPct = Math.min(100, Math.round((networkThisWeek / netTarget) * 100))
+
+            function TargetBar({ label, current, target, pct, onChange }) {
+              const color = pct >= 100 ? 'bg-emerald-500' : pct >= 60 ? 'bg-[#6D99F2]' : 'bg-amber-400'
+              const textColor = pct >= 100 ? 'text-emerald-600' : pct >= 60 ? 'text-[#6D99F2]' : 'text-amber-600'
+              return (
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-sm font-medium text-[#263746]">{label}</label>
+                    <span className={`text-xs font-bold ${textColor}`}>{current} / {target} this week</span>
+                  </div>
+                  <div className="w-full h-1.5 bg-[#EEF3FA] rounded-full mb-2">
+                    <div className={`h-full rounded-full transition-all ${color}`} style={{ width: `${pct}%` }} />
+                  </div>
+                  <input className={inputCls} type="number" min="1" value={target} onChange={e => onChange(+e.target.value)} />
+                </div>
+              )
+            }
+
+            return (
+              <div className="bg-white rounded-xl border border-[#D8E4EC] p-6">
+                <h3 className="font-semibold text-[#263746] mb-1 font-['Inter']">Weekly Targets</h3>
+                <p className="text-sm text-[#7A8FA3] mb-4">Set your targets below. The bar shows this week's progress.</p>
+                <div className="grid grid-cols-2 gap-6">
+                  <TargetBar label="Applications" current={appsThisWeek} target={appTarget} pct={appPct} onChange={v => setProfile('weeklyAppTarget', v)} />
+                  <TargetBar label="Networking" current={networkThisWeek} target={netTarget} pct={netPct} onChange={v => setProfile('weeklyNetworkTarget', v)} />
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-[#263746] mb-1">Weekly Networking Target</label>
-                <input className={inputCls} type="number" min="1" value={profile.weeklyNetworkTarget} onChange={e => setProfile('weeklyNetworkTarget', +e.target.value)} />
-              </div>
-            </div>
-          </div>
+            )
+          })()}
         </div>
       )}
 
