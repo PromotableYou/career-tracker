@@ -191,10 +191,6 @@ function ExpandedForm({
                   <input className={inputCls} value={app.salaryTarget || ''} onChange={e => updateApp(app.id, 'salaryTarget', e.target.value)} placeholder="e.g. $105,000" />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Highest You'd Accept</label>
-                  <input className={inputCls} value={app.salaryHighest || ''} onChange={e => updateApp(app.id, 'salaryHighest', e.target.value)} placeholder="e.g. $110,000" />
-                </div>
-                <div>
                   <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Lowest You'd Accept</label>
                   <input className={inputCls} value={app.salaryLowest || ''} onChange={e => updateApp(app.id, 'salaryLowest', e.target.value)} placeholder="e.g. $85,000" />
                 </div>
