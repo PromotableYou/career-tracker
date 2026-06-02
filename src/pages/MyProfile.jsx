@@ -278,6 +278,14 @@ export default function MyProfile() {
                 <label className="block text-sm font-medium text-[#263746] mb-1">90-Day Goal</label>
                 <textarea className={inputCls} rows={2} value={profile.ninetyDayGoal || ''} onChange={e => setProfile('ninetyDayGoal', e.target.value)} placeholder="What do you want to achieve in the next 90 days? e.g. Land a senior PM role at a purpose-driven company." />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-[#263746] mb-1">Unique Selling Proposition</label>
+                <textarea className={inputCls} rows={3} value={profile.usp || ''} onChange={e => setProfile('usp', e.target.value)} placeholder="What makes you different? e.g. I'm the only PM in this space who has both built products from zero and led enterprise transformations — I bridge the gap between vision and delivery." />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-[#263746] mb-1">About Me Statement</label>
+                <textarea className={inputCls} rows={4} value={profile.aboutMe || ''} onChange={e => setProfile('aboutMe', e.target.value)} placeholder="2–3 sentences about who you are, what you bring, and what you're looking for. Use this as your elevator pitch, LinkedIn About section, or cover letter opener." />
+              </div>
             </div>
           </div>
 

@@ -9,6 +9,7 @@ export const DEFAULTS = {
     weeklyAppTarget: 5, weeklyNetworkTarget: 3,
     jobTitles: [],
     onboardingComplete: false, watchedWelcome: false, thirtyDayGoal: '', ninetyDayGoal: '',
+    usp: '', aboutMe: '',
   },
   blueprint: {
     company: '', culture: '', team: '', manager: '',

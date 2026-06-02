@@ -7,14 +7,12 @@ import Dashboard from './pages/Dashboard'
 import MyProfile from './pages/MyProfile'
 import RoleTracker from './pages/RoleTracker'
 import Networking from './pages/Networking'
-import LinkedIn from './pages/LinkedIn'
 import InterviewPrep from './pages/InterviewPrep'
 import WeeklyLog from './pages/WeeklyLog'
 import Events from './pages/Events'
 import {
   LayoutDashboard, User, Briefcase, Network,
-  Link2, MessageSquare, CalendarCheck,
-  ClipboardList, Menu, X, ChevronRight, Search, GraduationCap
+  MessageSquare, ClipboardList, Menu, X, ChevronRight, Search, GraduationCap
 } from 'lucide-react'
 import pyLogo from './assets/py-logo.png'
 
@@ -22,8 +20,7 @@ const NAV = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'myprofile', label: 'My Profile', icon: User },
   { id: 'roles', label: 'Role Tracker', icon: Briefcase },
-  { id: 'networking', label: 'Networking', icon: Network },
-  { id: 'linkedin', label: 'LinkedIn', icon: Link2 },
+  { id: 'networking', label: 'Early Access', icon: Network },
   { id: 'interviews', label: 'Interview Prep', icon: MessageSquare },
   { id: 'weeklylog', label: 'Weekly Log', icon: ClipboardList },
   { id: 'events', label: 'Professional Dev', icon: GraduationCap },
@@ -31,7 +28,7 @@ const NAV = [
 
 const PAGES = {
   dashboard: Dashboard, myprofile: MyProfile, roles: RoleTracker,
-  networking: Networking, linkedin: LinkedIn,
+  networking: Networking,
   interviews: InterviewPrep, weeklylog: WeeklyLog, events: Events,
 }
 

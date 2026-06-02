@@ -1,6 +1,19 @@
 import { useState, useEffect } from 'react'
 import { useData } from '../context/DataContext'
-import { Plus, Trash2, ChevronDown, ChevronUp, MapPin, Copy, Search, Check } from 'lucide-react'
+import { Plus, Trash2, ChevronDown, ChevronUp, MapPin, Copy, Search, Check, CheckCircle2, Circle } from 'lucide-react'
+
+const LINKEDIN_CHECKLIST = [
+  { key: 'headline', label: 'Headline aligned with target role' },
+  { key: 'about', label: 'About section includes hook' },
+  { key: 'experience', label: 'Experience bullets are outcome-driven' },
+  { key: 'skills', label: 'Skills match target role' },
+  { key: 'recommendations', label: 'Recommendations requested' },
+  { key: 'activity', label: 'Activity consistent' },
+  { key: 'connections', label: 'Connections growing' },
+  { key: 'endorsements', label: 'Endorsements up-to-date' },
+  { key: 'photo', label: 'Profile photo professional' },
+  { key: 'url', label: 'Custom URL optimised' },
+]
 
 const TYPE_OPTIONS = ['','Peer','Mentor','Recruiter','Hiring Manager','Alumni','Former colleague','Industry contact','LinkedIn connection','Other']
 const DEPTH_OPTIONS = ['','Weak tie','Acquaintance','Established','Strong']
@@ -214,13 +227,18 @@ function ContactCard({ contact, isExpanded, onToggle, onSave, onRemove }) {
 }
 
 export default function Networking() {
-  const { data, update } = useData()
+  const { data, update, updateNested } = useData()
   const contacts = data.networking || []
+  const linkedinChecklist = data.linkedinChecklist || {}
   const [expanded, setExpanded] = useState(null)
   const [statusFilter, setStatusFilter] = useState('All')
   const [showTemplates, setShowTemplates] = useState(false)
   const [search, setSearch] = useState('')
   const [groupByCompany, setGroupByCompany] = useState(false)
+
+  const liCompleted = LINKEDIN_CHECKLIST.filter(i => linkedinChecklist[i.key]).length
+  const liPct = Math.round((liCompleted / LINKEDIN_CHECKLIST.length) * 100)
+  function toggleCheck(key) { updateNested('linkedinChecklist', key, !linkedinChecklist[key]) }
 
   function set(next) { update('networking', next) }
   function add() {
@@ -249,13 +267,42 @@ export default function Networking() {
     <div className="w-full">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-[#263746] mb-1 font-['Inter']">Networking</h2>
-          <p className="text-sm text-[#7A8FA3]">Your network map. Who you know, how you know them, relationship depth.</p>
+          <h2 className="text-2xl font-bold text-[#263746] mb-1 font-['Inter']">Early Access</h2>
+          <p className="text-sm text-[#7A8FA3]">Get ahead before roles are posted. Your network, your LinkedIn, your edge.</p>
         </div>
         <button onClick={add} className="flex items-center gap-2 bg-[#263746] hover:bg-[#1a2832] text-white text-sm font-medium px-4 py-2 rounded-lg cursor-pointer transition-colors">
           <Plus size={16} /> Add contact
         </button>
       </div>
+
+      <div className="flex gap-6 items-start">
+
+        {/* ── LEFT: LinkedIn profile checklist ── */}
+        <div className="hidden lg:block w-56 flex-shrink-0">
+          <div className="bg-white rounded-xl border border-[#D8E4EC] p-4 sticky top-4">
+            <p className="text-xs font-bold text-[#263746] mb-1">LinkedIn Profile</p>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="flex-1 h-1.5 bg-[#EEF3FA] rounded-full overflow-hidden">
+                <div className="h-full bg-[#6D99F2] rounded-full transition-all" style={{ width: `${liPct}%` }} />
+              </div>
+              <span className="text-[10px] text-[#7A8FA3] flex-shrink-0">{liCompleted}/{LINKEDIN_CHECKLIST.length}</span>
+            </div>
+            <div className="space-y-1.5">
+              {LINKEDIN_CHECKLIST.map(({ key, label }) => (
+                <button key={key} onClick={() => toggleCheck(key)} className="w-full flex items-center gap-2 text-left hover:bg-[#F5F9FD] rounded-lg px-1.5 py-1 transition-colors cursor-pointer">
+                  {linkedinChecklist[key]
+                    ? <CheckCircle2 size={13} className="text-[#6D99F2] flex-shrink-0" />
+                    : <Circle size={13} className="text-[#D8E4EC] flex-shrink-0" />
+                  }
+                  <span className={`text-xs leading-tight ${linkedinChecklist[key] ? 'line-through text-[#7A8FA3]' : 'text-[#4A5C6B]'}`}>{label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* ── RIGHT: main content ── */}
+        <div className="flex-1 min-w-0">
 
       {/* Filter bar */}
       {contacts.length > 0 && (
@@ -395,6 +442,10 @@ export default function Networking() {
             ))}
           </div>
         )}
+      </div>
+        {/* end right column */}
+        </div>
+      {/* end flex row */}
       </div>
     </div>
   )
