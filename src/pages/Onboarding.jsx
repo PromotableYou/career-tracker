@@ -4,7 +4,6 @@ import { CheckCircle, Play } from 'lucide-react'
 
 const STEPS = [
   { label: 'Your Profile' },
-  { label: 'Career Blueprint' },
   { label: 'Welcome Video' },
   { label: 'Your 90-Day Goal' },
 ]
@@ -22,15 +21,11 @@ export default function Onboarding({ onComplete }) {
     updateNested('profile', field, value)
   }
 
-  function blueprintField(field, value) {
-    updateNested('blueprint', field, value)
-  }
-
   const canProceedStep0 = !!(data.profile.name && data.profile.name.trim())
-  const canProceedStep2 = !!data.profile.watchedWelcome
+  const canProceedStep1 = !!data.profile.watchedWelcome
 
   function handleNext() {
-    if (step < 3) {
+    if (step < 2) {
       setStep(step + 1)
     } else {
       updateNested('profile', 'onboardingComplete', true)
@@ -38,11 +33,11 @@ export default function Onboarding({ onComplete }) {
     }
   }
 
-  const isLastStep = step === 3
+  const isLastStep = step === 2
   const isDisabled =
     (step === 0 && !canProceedStep0) ||
-    (step === 2 && !canProceedStep2)
-  const canSkip = step === 1 || step === 3
+    (step === 1 && !canProceedStep1)
+  const canSkip = step === 2
 
   return (
     <div className="min-h-screen bg-[#F8F5F2] flex items-center justify-center px-4 py-10">
@@ -102,12 +97,9 @@ export default function Onboarding({ onComplete }) {
             <StepProfile data={data} profileField={profileField} fieldClass={fieldClass} labelClass={labelClass} />
           )}
           {step === 1 && (
-            <StepBlueprint data={data} blueprintField={blueprintField} textareaClass={textareaClass} labelClass={labelClass} />
-          )}
-          {step === 2 && (
             <StepVideo data={data} profileField={profileField} />
           )}
-          {step === 3 && (
+          {step === 2 && (
             <StepGoal data={data} profileField={profileField} textareaClass={textareaClass} labelClass={labelClass} />
           )}
         </div>

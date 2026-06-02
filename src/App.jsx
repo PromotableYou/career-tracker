@@ -195,8 +195,8 @@ function AppInner() {
   if (hasAccess === null) return <NoAccess />
 
   const { data, updateNested } = useData()
-  // Skip onboarding if they've explicitly completed it, OR if they already have profile data (existing users)
-  const skipOnboarding = data.profile?.onboardingComplete || !!data.profile?.name
+  // Only skip onboarding once explicitly completed (existing users are handled in mergeWithDefaults)
+  const skipOnboarding = !!data.profile?.onboardingComplete
   if (!skipOnboarding) {
     return <Onboarding onComplete={() => updateNested('profile', 'onboardingComplete', true)} />
   }

@@ -54,7 +54,13 @@ function getUid() {
 }
 
 function mergeWithDefaults(saved) {
-  return { ...DEFAULTS, ...saved }
+  const merged = { ...DEFAULTS, ...saved }
+  // Auto-complete onboarding for existing users who already have a name
+  // (prevents the onboarding from appearing for users who pre-date the onboarding flow)
+  if (merged.profile?.name && !merged.profile?.onboardingComplete) {
+    merged.profile = { ...merged.profile, onboardingComplete: true }
+  }
+  return merged
 }
 
 export function DataProvider({ children }) {
