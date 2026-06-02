@@ -288,6 +288,25 @@ export default function Dashboard({ navigate }) {
         </div>
       </div>
 
+      {/* ── WEEKLY CHECK-IN NUDGE ────────────────────────────── */}
+      {checkinOverdue && (
+        <div className="mb-6 flex items-center justify-between gap-4 bg-[#263746] text-white rounded-2xl px-6 py-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="text-2xl flex-shrink-0">📋</span>
+            <div className="min-w-0">
+              <p className="font-bold text-sm">Have you done your weekly check-in?</p>
+              <p className="text-xs text-white/60 mt-0.5">It takes 2 minutes. Reflect, reset, and go again.</p>
+            </div>
+          </div>
+          <button
+            onClick={() => navigate('checkin')}
+            className="flex-shrink-0 bg-white text-[#263746] text-xs font-bold px-4 py-2.5 rounded-xl hover:bg-[#EEF3FA] cursor-pointer transition-colors"
+          >
+            Do it now →
+          </button>
+        </div>
+      )}
+
       {/* ── MILESTONES ────────────────────────────────────────── */}
       <div className="mb-6">
         <p className="text-xs font-bold text-[#A8BCC8] uppercase tracking-widest mb-3">Your milestones</p>
