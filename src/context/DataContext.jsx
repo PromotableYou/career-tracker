@@ -45,12 +45,17 @@ function getUid() {
   const params = new URLSearchParams(window.location.search)
   const urlUid = params.get('uid')
   if (urlUid) {
+    // Use sessionStorage so the uid is scoped to this tab/session only.
+    // A fresh tab or new browser session will always require email login.
+    sessionStorage.setItem('py-tracker-uid', urlUid)
+    // Keep localStorage in sync so the data cache uid-check still works
     localStorage.setItem('py-tracker-uid', urlUid)
     return urlUid
   }
   // If an email is in the URL, ignore any cached uid so the email lookup runs fresh
   if (getEmailParam()) return null
-  return localStorage.getItem('py-tracker-uid') || null
+  // Only read from sessionStorage — not localStorage — so uid never leaks across tabs/sessions
+  return sessionStorage.getItem('py-tracker-uid') || null
 }
 
 function mergeWithDefaults(saved) {
