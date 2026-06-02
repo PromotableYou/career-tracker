@@ -70,6 +70,7 @@ exports.handler = async (event) => {
       lastCheckin,
       targetRole: d.profile?.targetRole || '',
       coach: d.profile?.coach || '',
+      wins: (d.wins || []).map(w => ({ id: w.id, text: w.text, date: w.date })),
     }
   })
 

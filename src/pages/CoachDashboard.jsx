@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Users, Briefcase, CheckCircle, AlertCircle, ExternalLink, Search, StickyNote, TrendingUp, Clock, Award, ChevronDown, ChevronUp } from 'lucide-react'
+import { Users, Briefcase, CheckCircle, AlertCircle, ExternalLink, Search, StickyNote, TrendingUp, Clock, Award, ChevronDown, ChevronUp, Trophy, Copy, Check } from 'lucide-react'
 
 function daysSince(dateStr) {
   if (!dateStr) return null
@@ -43,6 +43,37 @@ function RiskBadge({ days }) {
       <span className="w-1.5 h-1.5 rounded-full bg-[#FF5E5B]" />
       {days}d ago
     </span>
+  )
+}
+
+function WinCard({ win }) {
+  const [copied, setCopied] = useState(false)
+  function copy() {
+    navigator.clipboard.writeText(`🏆 ${win.memberName}: "${win.text}"`)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+  return (
+    <div className="bg-[#FFFDF5] border border-[#D4AF37]/30 rounded-xl p-4 flex flex-col gap-3">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="w-7 h-7 rounded-full bg-[#D4AF37]/20 flex items-center justify-center text-xs font-bold text-[#D4AF37] flex-shrink-0">
+            {win.memberInitial}
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-semibold text-[#263746] truncate">{win.memberName}</p>
+            {win.date && <p className="text-[10px] text-[#7A8FA3]">{new Date(win.date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' })}</p>}
+          </div>
+        </div>
+        <button
+          onClick={copy}
+          className={`flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-lg flex-shrink-0 cursor-pointer transition-colors ${copied ? 'bg-emerald-50 text-emerald-600' : 'bg-white border border-[#D8E4EC] text-[#7A8FA3] hover:text-[#263746]'}`}
+        >
+          {copied ? <><Check size={10} /> Copied</> : <><Copy size={10} /> Copy</>}
+        </button>
+      </div>
+      <p className="text-sm text-[#263746] leading-relaxed">"{win.text}"</p>
+    </div>
   )
 }
 
@@ -253,6 +284,30 @@ export default function CoachDashboard({ coachKey }) {
             <p className="text-xs text-[#7A8FA3] mt-1">Weekly check-ins submitted</p>
           </div>
         </div>
+
+        {/* Wins Board */}
+        {(() => {
+          const allWins = members
+            .flatMap(m => (m.wins || []).map(w => ({ ...w, memberName: m.name, memberInitial: m.name.charAt(0) })))
+            .filter(w => w.text)
+            .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
+            .slice(0, 30)
+
+          if (allWins.length === 0) return null
+
+          return (
+            <div className="bg-white rounded-xl border border-[#D8E4EC] overflow-hidden shadow-sm">
+              <SectionHeader title="🏆 Wins Board" subtitle="Recent wins logged by your clients — celebrate and share them!" gold />
+              <div className="p-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {allWins.map(w => (
+                    <WinCard key={`${w.memberName}-${w.id}`} win={w} />
+                  ))}
+                </div>
+              </div>
+            </div>
+          )
+        })()}
 
         {/* All Members */}
         <div className="bg-white rounded-xl border border-[#D8E4EC] overflow-hidden shadow-sm">
