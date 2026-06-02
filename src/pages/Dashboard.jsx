@@ -257,7 +257,7 @@ export default function Dashboard({ navigate }) {
   const s = STATUS_STYLES[status.variant]
 
   return (
-    <div className="max-w-5xl">
+    <div className="w-full">
 
       {/* ── GREETING ─────────────────────────────────────────── */}
       <div className="mb-7">

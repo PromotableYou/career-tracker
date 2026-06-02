@@ -79,7 +79,7 @@ export default function Events() {
     : entries
 
   return (
-    <div className="max-w-4xl">
+    <div className="w-full">
       {/* Page header */}
       <div className="flex items-center justify-between mb-6">
         <div>

@@ -116,7 +116,7 @@ export default function WeeklyCheckin() {
   const total = checkins.length
 
   return (
-    <div className="max-w-3xl">
+    <div className="w-full">
 
       {/* Header */}
       <div className="flex items-start justify-between mb-6">

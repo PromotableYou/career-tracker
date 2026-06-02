@@ -283,10 +283,8 @@ function AppInner() {
         </div>
 
         {/* Main content */}
-        <main className="max-w-6xl mx-auto px-6 py-8 flex justify-center">
-          <div className="w-full max-w-4xl">
-            <Page navigate={navigate} />
-          </div>
+        <main className="max-w-6xl mx-auto px-6 py-8">
+          <Page navigate={navigate} />
         </main>
 
       </div>

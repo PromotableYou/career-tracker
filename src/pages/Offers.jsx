@@ -25,7 +25,7 @@ export default function Offers() {
   function upd(id, field, value) { set(offers.map(o => o.id === id ? { ...o, [field]: value } : o)) }
 
   return (
-    <div className="max-w-4xl">
+    <div className="w-full">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-2xl font-bold text-[#263746] mb-1 font-['Inter']">Offers</h2>

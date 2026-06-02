@@ -518,7 +518,7 @@ function ComparePanel({ apps, compareIds, onClose }) {
   if (compared.length < 2) return null
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-[#263746] shadow-2xl z-40 max-h-[60vh] overflow-y-auto">
-      <div className="max-w-5xl mx-auto px-6 py-4">
+      <div className="w-full px-6 py-4">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-bold text-[#263746]">Comparing {compared.length} roles</h3>
           <button onClick={onClose} className="text-xs text-[#7A8FA3] hover:text-[#263746] cursor-pointer">&#x2715; Close</button>

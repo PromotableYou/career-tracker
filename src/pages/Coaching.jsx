@@ -21,7 +21,7 @@ export default function Coaching() {
   function removeCommitment(id, cId) { set(sessions.map(s => s.id === id ? { ...s, commitments: (s.commitments || []).filter(c => c.id !== cId) } : s)) }
 
   return (
-    <div className="max-w-3xl">
+    <div className="w-full">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-2xl font-bold text-[#263746] mb-1 font-['Inter']">Coaching Sessions</h2>

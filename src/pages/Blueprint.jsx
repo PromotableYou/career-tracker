@@ -173,7 +173,7 @@ export default function Blueprint() {
   function set(field, value) { updateNested('blueprint', field, value) }
 
   return (
-    <div className="max-w-4xl">
+    <div className="w-full">
       <div className="flex items-start justify-between mb-6">
         <div>
           <h2 className="text-2xl font-bold text-[#263746] mb-1 font-['Inter']">Career Blueprint</h2>

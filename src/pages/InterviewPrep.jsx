@@ -145,7 +145,7 @@ export default function InterviewPrep() {
   }
 
   return (
-    <div className="max-w-4xl">
+    <div className="w-full">
 
       {/* Practice mode overlay */}
       {practiceMode && practiceQ && (

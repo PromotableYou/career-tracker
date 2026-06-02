@@ -78,7 +78,7 @@ export default function LinkedIn() {
   function toggleActivity(id) { setActivityExpanded(activityExpanded === id ? null : id) }
 
   return (
-    <div className="max-w-4xl">
+    <div className="w-full">
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-[#263746] mb-1 font-['Inter']">LinkedIn</h2>
         <p className="text-sm text-[#7A8FA3]">Profile checklist and outreach log.</p>
