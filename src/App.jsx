@@ -216,7 +216,7 @@ function AppInner() {
 
         {/* Top bar */}
         <header className="bg-white border-b border-[#D8E4EC] sticky top-0 z-20">
-          <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
+          <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button
                 onClick={() => setOpen(o => !o)}
@@ -224,12 +224,20 @@ function AppInner() {
               >
                 {open ? <X size={20} /> : <Menu size={20} />}
               </button>
-              <span
-                className="text-lg text-[#263746]"
-                style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontWeight: 600 }}
-              >
-                Application Accelerator
-              </span>
+              <div className="flex flex-col leading-tight">
+                <span
+                  className="text-2xl text-[#263746]"
+                  style={{ fontFamily: "'Playfair Display', Georgia, serif", fontStyle: 'italic', fontWeight: 700 }}
+                >
+                  Application Accelerator
+                </span>
+                <span
+                  className="text-xs text-[#7A8FA3] tracking-wide"
+                  style={{ fontFamily: "'Inter', sans-serif", fontWeight: 400 }}
+                >
+                  by Promotable You
+                </span>
+              </div>
             </div>
             <img src={pyLogo} alt="Promotable You" className="h-7 w-auto" />
           </div>
@@ -245,7 +253,7 @@ function AppInner() {
 
         {/* Drawer */}
         <div className={`
-          fixed top-14 left-0 h-[calc(100vh-3.5rem)] w-64 bg-white border-r border-[#D8E4EC] z-40
+          fixed top-16 left-0 h-[calc(100vh-4rem)] w-64 bg-white border-r border-[#D8E4EC] z-40
           flex flex-col shadow-lg
           transition-transform duration-200 ease-in-out
           ${open ? 'translate-x-0' : '-translate-x-full'}
@@ -275,8 +283,10 @@ function AppInner() {
         </div>
 
         {/* Main content */}
-        <main className="max-w-6xl mx-auto px-6 py-8">
-          <Page navigate={navigate} />
+        <main className="max-w-6xl mx-auto px-6 py-8 flex justify-center">
+          <div className="w-full max-w-4xl">
+            <Page navigate={navigate} />
+          </div>
         </main>
 
       </div>
