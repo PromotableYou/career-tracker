@@ -3,7 +3,7 @@ import { useData } from '../context/DataContext'
 import { Plus, Trash2, ChevronDown, ExternalLink, Info, LayoutGrid, List, Columns2, Search, Copy, Download, Clock } from 'lucide-react'
 import FileUpload from '../components/FileUpload'
 
-const STATUS_OPTIONS = ['Not Started', 'Researching', 'Applied', 'Interview Scheduled', 'Offer Received', 'Rejected']
+const STATUS_OPTIONS = ['Researching', 'Applied', 'Interview Scheduled', 'Offer Received', 'Rejected']
 const OUTCOME_OPTIONS = ['', 'Progressing', 'Rejected', 'Offer']
 const OUTREACH_TYPES = ['Call', 'Email', 'LinkedIn message', 'Received response']
 const WORK_TYPES = ['', 'Remote', 'Hybrid', 'On-site']
@@ -14,7 +14,6 @@ const WORK_TYPE_COLORS = {
   'On-site': 'bg-amber-50 text-amber-700',
 }
 const STATUS_COLORS = {
-  'Not Started': 'bg-[#F5F9FD] text-[#7A8FA3]',
   'Researching': 'bg-[#EEF3FA] text-[#6D99F2]',
   'Applied': 'bg-[#263746]/10 text-[#263746]',
   'Interview Scheduled': 'bg-[#FBD872]/20 text-amber-800',
@@ -32,7 +31,7 @@ const BP_CATEGORIES = [
   { key: 'salary', label: 'Salary / Benefits' },
 ]
 const inputCls = "w-full border border-[#D8E4EC] rounded-lg px-2 py-1.5 text-xs text-[#263746] focus:outline-none focus:ring-2 focus:ring-[#6D99F2]/40 bg-white placeholder:text-[#7A8FA3]"
-const ACTIVE_STATUSES = ['Not Started', 'Researching', 'Applied', 'Interview Scheduled', 'Offer Received']
+const ACTIVE_STATUSES = ['Researching', 'Applied', 'Interview Scheduled', 'Offer Received']
 
 function getAlignmentMeta(ratings) {
   const total = BP_CATEGORIES.reduce((sum, c) => sum + (parseInt(ratings?.[c.key]) || 0), 0)
@@ -59,7 +58,7 @@ function AlignmentPill({ ratings }) {
 
 function newApp() {
   return {
-    id: Date.now(), status: 'Not Started', jobRole: '', company: '', jobUrl: '', alignment: '', why: '',
+    id: Date.now(), status: 'Researching', jobRole: '', company: '', jobUrl: '', alignment: '', why: '',
     blueprintRatings: {}, selectedResume: '', source: '',
     connectedHM: false, connectionMsg: false, hmContact: '', hmRole: '',
     notes: '', resumeLink: '', coverLetterLink: '', closeDate: '', submittedDate: '',
@@ -635,7 +634,7 @@ export default function RoleTracker() {
   function duplicateApp(id) {
     const app = apps.find(a => a.id === id)
     if (!app) return
-    const dupe = { ...app, id: Date.now(), submittedDate: '', status: 'Not Started' }
+    const dupe = { ...app, id: Date.now(), submittedDate: '', status: 'Researching' }
     const next = [...apps]
     const idx = next.findIndex(a => a.id === id)
     next.splice(idx + 1, 0, dupe)
