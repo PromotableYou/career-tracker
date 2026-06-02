@@ -353,13 +353,16 @@ export default function Networking() {
 
       {/* Message Templates */}
       <div className="mt-8">
-        <button
-          onClick={() => setShowTemplates(t => !t)}
-          className="flex items-center gap-2 text-sm font-semibold text-[#263746] mb-4 cursor-pointer"
-        >
-          <span>💬 Message Templates</span>
-          <ChevronDown size={15} className={`text-[#7A8FA3] transition-transform ${showTemplates ? 'rotate-180' : ''}`} />
-        </button>
+        <div className="mb-4">
+          <button
+            onClick={() => setShowTemplates(t => !t)}
+            className="flex items-center gap-2 text-sm font-semibold text-[#263746] cursor-pointer"
+          >
+            <span>💬 Message Templates</span>
+            <ChevronDown size={15} className={`text-[#7A8FA3] transition-transform ${showTemplates ? 'rotate-180' : ''}`} />
+          </button>
+          <p className="text-xs text-[#7A8FA3] mt-1 italic">The templates are written. You have no excuse not to reach out. 😉</p>
+        </div>
         {showTemplates && (
           <div className="grid sm:grid-cols-2 gap-4">
             {[
