@@ -531,27 +531,43 @@ export default function Dashboard({ navigate }) {
               </div>
             )}
 
-            {/* Overdue follow-ups */}
-            {overdueFollowUps.length > 0 && (
-              <div className="bg-red-50 border border-red-100 rounded-2xl p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <AlertCircle size={14} className="text-red-400" />
-                  <span className="text-xs font-bold text-red-700">{overdueFollowUps.length} follow-up{overdueFollowUps.length !== 1 ? 's' : ''} overdue</span>
+            {/* Overdue / due-today follow-ups */}
+            {overdueFollowUps.length > 0 && (() => {
+              const todayStr = new Date().toISOString().slice(0, 10)
+              const dueToday = overdueFollowUps.filter(a => a.followUpDate === todayStr)
+              const pastDue = overdueFollowUps.filter(a => a.followUpDate < todayStr)
+              return (
+                <div className="bg-red-50 border border-red-100 rounded-2xl p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <AlertCircle size={14} className="text-red-400" />
+                    <span className="text-xs font-bold text-red-700">
+                      {dueToday.length > 0 && pastDue.length === 0
+                        ? `${dueToday.length} follow-up${dueToday.length !== 1 ? 's' : ''} due today`
+                        : dueToday.length > 0
+                          ? `${overdueFollowUps.length} follow-up${overdueFollowUps.length !== 1 ? 's' : ''} need attention`
+                          : `${pastDue.length} follow-up${pastDue.length !== 1 ? 's' : ''} overdue`}
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    {overdueFollowUps.map(a => {
+                      const isToday = a.followUpDate === todayStr
+                      return (
+                        <div key={a.id} className={`flex items-center justify-between gap-3 bg-white rounded-xl px-4 py-2.5 border ${isToday ? 'border-amber-200' : 'border-red-100'}`}>
+                          <div>
+                            <span className="text-sm font-semibold text-[#263746]">{a.company || 'Untitled'}</span>
+                            {a.jobRole && <span className="text-xs text-[#A8BCC8] ml-2">{a.jobRole}</span>}
+                            <span className={`text-xs ml-2 font-medium ${isToday ? 'text-amber-500' : 'text-red-400'}`}>
+                              {isToday ? '📅 due today' : `overdue · ${a.followUpDate}`}
+                            </span>
+                          </div>
+                          <button onClick={() => markFollowUpDone(a.id)} className="text-xs text-emerald-600 font-bold hover:underline cursor-pointer flex-shrink-0">Mark done</button>
+                        </div>
+                      )
+                    })}
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  {overdueFollowUps.map(a => (
-                    <div key={a.id} className="flex items-center justify-between gap-3 bg-white rounded-xl px-4 py-2.5 border border-red-100">
-                      <div>
-                        <span className="text-sm font-semibold text-[#263746]">{a.company || 'Untitled'}</span>
-                        {a.jobRole && <span className="text-xs text-[#A8BCC8] ml-2">{a.jobRole}</span>}
-                        <span className="text-xs text-red-400 ml-2">due {a.followUpDate}</span>
-                      </div>
-                      <button onClick={() => markFollowUpDone(a.id)} className="text-xs text-emerald-600 font-bold hover:underline cursor-pointer flex-shrink-0">Mark done</button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+              )
+            })()}
 
             {/* Module prompts */}
             {modulePrompts.map((p, i) => (

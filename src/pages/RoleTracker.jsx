@@ -77,7 +77,6 @@ const FORM_TABS = [
   { id: 'research', label: 'Research' },
   { id: 'blueprint', label: 'Blueprint' },
   { id: 'activity', label: 'Activity' },
-  { id: 'interview', label: 'Interview' },
   { id: 'documents', label: 'Docs' },
 ]
 
@@ -90,7 +89,7 @@ function ExpandedForm({
 }) {
   const [tab, setTab] = useState('details')
   const today = new Date().toISOString().slice(0, 10)
-  const followUpOverdue = app.followUpDate && app.followUpDate < today && !app.followUpDone
+  const followUpOverdue = app.followUpDate && app.followUpDate <= today && !app.followUpDone
   const todosRemaining = (app.todos || []).filter(t => !t.done).length
 
   return (
@@ -350,88 +349,6 @@ function ExpandedForm({
                 </div>
               )}
             </div>
-          </div>
-        )}
-
-        {/* ── INTERVIEW TAB ── */}
-        {tab === 'interview' && (
-          <div className="space-y-5">
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Interview Date</label>
-                <input className={inputCls} type="date" value={app.interviewDate} onChange={e => updateApp(app.id, 'interviewDate', e.target.value)} />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Interview Stage</label>
-                <input className={inputCls} value={app.interviewStage} onChange={e => updateApp(app.id, 'interviewStage', e.target.value)} placeholder="e.g. First round" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Outcome</label>
-                <select className={inputCls} value={app.outcome} onChange={e => updateApp(app.id, 'outcome', e.target.value)}>
-                  {OUTCOME_OPTIONS.map(o => <option key={o}>{o}</option>)}
-                </select>
-              </div>
-              <div className="flex items-center gap-2">
-                <input type="checkbox" id={`prep-${app.id}`} checked={app.prepDone} onChange={e => updateApp(app.id, 'prepDone', e.target.checked)} className="accent-[#263746]" />
-                <label htmlFor={`prep-${app.id}`} className="text-xs text-[#4A5C6B]">Interview prep completed</label>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Interview Outcome</label>
-                <input className={inputCls} value={app.interviewOutcome} onChange={e => updateApp(app.id, 'interviewOutcome', e.target.value)} placeholder="e.g. Progressed to next round" />
-              </div>
-              <div className="col-span-2 lg:col-span-3">
-                <label className="block text-xs font-medium text-[#4A5C6B] mb-1">Additional Notes</label>
-                <textarea className={inputCls} rows={2} value={app.additionalNotes} onChange={e => updateApp(app.id, 'additionalNotes', e.target.value)} placeholder="Anything else" />
-              </div>
-            </div>
-
-            <div className="pt-4 border-t border-[#EEF3FA]">
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-                <p className="text-xs font-bold text-amber-800 uppercase tracking-wide mb-2">Feedback</p>
-                <textarea
-                  className="w-full border border-amber-200 rounded-lg px-3 py-2 text-sm text-[#263746] focus:outline-none focus:ring-2 focus:ring-amber-300/40 bg-white placeholder:text-[#7A8FA3] resize-none"
-                  rows={3}
-                  value={app.feedback}
-                  onChange={e => updateApp(app.id, 'feedback', e.target.value)}
-                  placeholder="What feedback did you receive? What would you do differently?"
-                />
-              </div>
-            </div>
-
-            {(app.status === 'Offer Received' || app.offerAmount || app.offerDate) && (
-              <div className="pt-4 border-t border-[#EEF3FA]">
-                <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
-                  <p className="text-xs font-bold text-emerald-800 uppercase tracking-wide mb-3">Offer Details</p>
-                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-                    <div>
-                      <label className="block text-xs font-medium text-emerald-700 mb-1">Offer Date</label>
-                      <input className="w-full border border-emerald-200 rounded-lg px-2 py-1.5 text-xs bg-white text-[#263746] focus:outline-none" type="date" value={app.offerDate || ''} onChange={e => updateApp(app.id, 'offerDate', e.target.value)} />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-emerald-700 mb-1">Offered Amount</label>
-                      <input className="w-full border border-emerald-200 rounded-lg px-2 py-1.5 text-xs bg-white text-[#263746] focus:outline-none" value={app.offerAmount || ''} onChange={e => updateApp(app.id, 'offerAmount', e.target.value)} placeholder="e.g. $95,000" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-emerald-700 mb-1">Deadline to Decide</label>
-                      <input className="w-full border border-emerald-200 rounded-lg px-2 py-1.5 text-xs bg-white text-[#263746] focus:outline-none" type="date" value={app.offerDeadline || ''} onChange={e => updateApp(app.id, 'offerDeadline', e.target.value)} />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-emerald-700 mb-1">Decision</label>
-                      <select className="w-full border border-emerald-200 rounded-lg px-2 py-1.5 text-xs bg-white text-[#263746] focus:outline-none" value={app.offerDecision || ''} onChange={e => updateApp(app.id, 'offerDecision', e.target.value)}>
-                        <option value="">Not decided</option>
-                        <option value="Accept">Accept</option>
-                        <option value="Negotiate">Negotiate</option>
-                        <option value="Decline">Decline</option>
-                      </select>
-                    </div>
-                    <div className="col-span-2">
-                      <label className="block text-xs font-medium text-emerald-700 mb-1">Negotiation Notes</label>
-                      <input className="w-full border border-emerald-200 rounded-lg px-2 py-1.5 text-xs bg-white text-[#263746] focus:outline-none placeholder:text-[#7A8FA3]" value={app.offerNotes || ''} onChange={e => updateApp(app.id, 'offerNotes', e.target.value)} placeholder="Negotiation strategy, counter offer, notes..." />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         )}
 
@@ -946,7 +863,7 @@ export default function RoleTracker() {
             </thead>
             <tbody>
               {displayed.map((app) => {
-                const followUpOverdue = app.followUpDate && app.followUpDate < today && !app.followUpDone
+                const followUpOverdue = app.followUpDate && app.followUpDate <= today && !app.followUpDone
                 const isExpanded = expanded === app.id
                 return (
                   <>
