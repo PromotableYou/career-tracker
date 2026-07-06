@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { DataProvider, useData } from './context/DataContext'
 import CoachDashboard from './pages/CoachDashboard'
+import CoachLogin from './pages/CoachLogin'
 import NoAccess from './pages/NoAccess'
 import Onboarding from './pages/Onboarding'
 import Dashboard from './pages/Dashboard'
@@ -288,8 +289,22 @@ function AppInner() {
 }
 
 export default function App() {
-  const coachKey = new URLSearchParams(window.location.search).get('coach')
-  if (coachKey) return <CoachDashboard coachKey={coachKey} />
+  const isCoachRoute = new URLSearchParams(window.location.search).has('coach')
+
+  const [coachAuth, setCoachAuth] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('coach_auth') || 'null') }
+    catch { return null }
+  })
+
+  if (isCoachRoute) {
+    if (!coachAuth) {
+      return <CoachLogin onLogin={data => setCoachAuth(data)} />
+    }
+    return <CoachDashboard auth={coachAuth} onLogout={() => {
+      localStorage.removeItem('coach_auth')
+      setCoachAuth(null)
+    }} />
+  }
 
   return (
     <DataProvider>
