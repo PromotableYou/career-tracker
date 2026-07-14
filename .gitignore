@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# video-editor (Python CLI)
+video-editor/**/__pycache__/
+video-editor/*.egg-info/
+video-editor/.pytest_cache/
