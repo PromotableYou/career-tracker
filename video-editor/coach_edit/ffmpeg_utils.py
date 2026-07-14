@@ -64,6 +64,36 @@ def extract_clip(input_path, output_path, start, end, reencode=False):
     run(args)
 
 
+def escape_filter_path(path):
+    """Escape a filesystem path for embedding as a filter option value (e.g. subtitles=...)."""
+    escaped = str(path).replace("\\", "\\\\").replace(":", "\\:").replace("'", "\\'")
+    return f"'{escaped}'"
+
+
+def extract_clip_with_filter(input_path, output_path, start, end, vf):
+    """Extract [start, end) seconds from input_path, applying a video filtergraph (e.g. crop+scale+subtitles)."""
+    duration = max(end - start, 0)
+    run(
+        [
+            "ffmpeg",
+            "-y",
+            "-ss",
+            f"{start:.3f}",
+            "-i",
+            str(input_path),
+            "-t",
+            f"{duration:.3f}",
+            "-vf",
+            vf,
+            "-c:v",
+            "libx264",
+            "-c:a",
+            "aac",
+            str(output_path),
+        ]
+    )
+
+
 def concat_clips(clip_paths, output_path):
     """Concatenate a list of clip files (same codec/params) into output_path."""
     import tempfile
